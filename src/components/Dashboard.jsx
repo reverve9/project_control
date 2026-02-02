@@ -9,7 +9,7 @@ function Dashboard({ projects, onSelectProject }) {
   // 지연된 할일 (마감일 지난 미완료 할일)
   const today = new Date().toISOString().split('T')[0]
   const overdueTodos = projects.reduce((sum, p) => 
-    sum + p.todos.filter(t => !t.completed && t.dueDate && t.dueDate < today).length, 0
+    sum + p.todos.filter(t => !t.completed && t.due_date && t.due_date < today).length, 0
   )
 
   // 다가오는 마감 (7일 이내)
@@ -19,8 +19,8 @@ function Dashboard({ projects, onSelectProject }) {
   
   projects.forEach(project => {
     project.todos.forEach(todo => {
-      if (!todo.completed && todo.dueDate) {
-        const dueDate = new Date(todo.dueDate)
+      if (!todo.completed && todo.due_date) {
+        const dueDate = new Date(todo.due_date)
         if (dueDate <= sevenDaysLater) {
           upcomingDeadlines.push({
             ...todo,
@@ -33,7 +33,7 @@ function Dashboard({ projects, onSelectProject }) {
     })
   })
   
-  upcomingDeadlines.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+  upcomingDeadlines.sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
 
   // 프로젝트 진행률
   const projectProgress = projects.map(p => {
@@ -96,7 +96,7 @@ function Dashboard({ projects, onSelectProject }) {
                 </div>
               ) : (
                 upcomingDeadlines.slice(0, 5).map(todo => {
-                  const dateInfo = formatDate(todo.dueDate)
+                  const dateInfo = formatDate(todo.due_date)
                   return (
                     <div 
                       key={todo.id} 

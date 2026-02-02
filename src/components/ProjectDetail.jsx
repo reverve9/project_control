@@ -36,9 +36,9 @@ function ProjectDetail({
   // 정렬: 미완료 먼저, 그 다음 마감일 순
   const sortedTodos = [...project.todos].sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1
-    if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate)
-    if (a.dueDate) return -1
-    if (b.dueDate) return 1
+    if (a.due_date && b.due_date) return new Date(a.due_date) - new Date(b.due_date)
+    if (a.due_date) return -1
+    if (b.due_date) return 1
     return 0
   })
 
@@ -101,7 +101,7 @@ function ProjectDetail({
               </div>
             ) : (
               sortedTodos.map(todo => {
-                const dueInfo = formatDueDate(todo.dueDate)
+                const dueInfo = formatDueDate(todo.due_date)
                 
                 return (
                   <div key={todo.id} className="todo-item">
