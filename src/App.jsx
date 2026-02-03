@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import Sidebar from './components/Sidebar'
@@ -27,78 +27,8 @@ function App() {
   const [editingMemo, setEditingMemo] = useState(null)
   const [editingInfo, setEditingInfo] = useState(null)
 
-  // 인증 상태 체크
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setAuthLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  // 유저 프로필 가져오기
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) return
-      const { data } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      
-      if (data) {
-        setUserProfile(data)
-      }
-    }
-
-    if (user) {
-      fetchUserProfile()
-      fetchProjects()
-    }
-  }, [user])
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setProjects([])
-    setUserProfile(null)
-    setActiveView('dashboard')
-    setActiveProjectId(null)
-  }
-
-  // 로그인 안 됐으면 Auth 화면
-  if (authLoading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-spinner"></div>
-        <p>로딩중...</p>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return <Auth onAuthSuccess={setUser} />
-  }
-
-  // 승인 안 됐으면 대기 화면
-  if (userProfile && !userProfile.approved) {
-    return (
-      <div className="pending-screen">
-        <div className="pending-card">
-          <h2>승인 대기 중</h2>
-          <p>관리자의 승인을 기다리고 있습니다.</p>
-          <p className="pending-email">{user.email}</p>
-          <button className="btn btn-ghost" onClick={handleLogout}>로그아웃</button>
-        </div>
-      </div>
-    )
-  }
-
-  const fetchProjects = async () => {
+  // 프로젝트 데이터 가져오기
+  const fetchProjects = useCallback(async () => {
     try {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
@@ -145,6 +75,77 @@ function App() {
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  // 인증 상태 체크
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setAuthLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // 유저 프로필 & 프로젝트 가져오기
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      
+      if (data) {
+        setUserProfile(data)
+      }
+    }
+
+    if (user) {
+      fetchUserProfile()
+      fetchProjects()
+    }
+  }, [user, fetchProjects])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setProjects([])
+    setUserProfile(null)
+    setActiveView('dashboard')
+    setActiveProjectId(null)
+  }
+
+  // 로그인 안 됐으면 Auth 화면
+  if (authLoading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>로딩중...</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Auth onAuthSuccess={setUser} />
+  }
+
+  // 승인 안 됐으면 대기 화면
+  if (userProfile && !userProfile.approved) {
+    return (
+      <div className="pending-screen">
+        <div className="pending-card">
+          <h2>승인 대기 중</h2>
+          <p>관리자의 승인을 기다리고 있습니다.</p>
+          <p className="pending-email">{user.email}</p>
+          <button className="btn btn-ghost" onClick={handleLogout}>로그아웃</button>
+        </div>
+      </div>
+    )
   }
 
   const activeProject = projects.find(p => p.id === activeProjectId)
