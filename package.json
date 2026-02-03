@@ -9,6 +9,7 @@
     "electron": "electron .",
     "electron:dev": "vite build && electron .",
     "electron:build": "vite build && electron-builder --mac",
+    "electron:build:win": "vite build && electron-builder --win",
     "start": "vite"
   },
   "build": {
@@ -21,9 +22,18 @@
       "target": "dmg",
       "icon": "electron/assets/icon.icns"
     },
+    "win": {
+      "target": "nsis",
+      "icon": "electron/assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "STYLE_GUIDE.md"
     ]
   },
   "dependencies": {
