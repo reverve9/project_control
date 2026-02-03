@@ -5,7 +5,7 @@ function Sidebar({ projects, activeView, activeProjectId, onSelectDashboard, onS
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">Pc</div>
+          <img src="./app-icon.png" alt="PC" className="sidebar-logo-icon" />
           <span className="sidebar-logo-text">Project Control</span>
         </div>
       </div>
@@ -24,8 +24,11 @@ function Sidebar({ projects, activeView, activeProjectId, onSelectDashboard, onS
       
       <div className="project-list">
         {projects.map(project => {
-          const completedCount = project.todos.filter(t => t.completed).length
-          const totalCount = project.todos.length
+          // 상세내용 기준 카운트
+          const totalCount = project.memos.reduce((sum, m) => sum + (m.details?.length || 0), 0)
+          const completedCount = project.memos.reduce((sum, m) => 
+            sum + (m.details?.filter(d => d.completed).length || 0), 0
+          )
           
           return (
             <div

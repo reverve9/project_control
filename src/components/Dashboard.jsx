@@ -1,58 +1,38 @@
-import { Clock, FolderOpen, Calendar, TrendingUp } from 'lucide-react'
+import { FolderOpen, TrendingUp } from 'lucide-react'
 
 function Dashboard({ projects, onSelectProject }) {
-  // 통계 계산
+  // 통계 계산 (상세내용 기준)
   const totalProjects = projects.length
-  const totalTodos = projects.reduce((sum, p) => sum + p.todos.length, 0)
-  const completedTodos = projects.reduce((sum, p) => sum + p.todos.filter(t => t.completed).length, 0)
   
-  // 지연된 할일 (마감일 지난 미완료 할일)
-  const today = new Date().toISOString().split('T')[0]
-  const overdueTodos = projects.reduce((sum, p) => 
-    sum + p.todos.filter(t => !t.completed && t.due_date && t.due_date < today).length, 0
+  const totalDetails = projects.reduce((sum, p) => 
+    sum + p.memos.reduce((mSum, m) => mSum + (m.details?.length || 0), 0), 0
   )
-
-  // 다가오는 마감 (7일 이내)
-  const sevenDaysLater = new Date()
-  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
-  const upcomingDeadlines = []
   
-  projects.forEach(project => {
-    project.todos.forEach(todo => {
-      if (!todo.completed && todo.due_date) {
-        const dueDate = new Date(todo.due_date)
-        if (dueDate <= sevenDaysLater) {
-          upcomingDeadlines.push({
-            ...todo,
-            projectName: project.name,
-            projectColor: project.color,
-            projectId: project.id
-          })
-        }
-      }
-    })
-  })
+  const completedDetails = projects.reduce((sum, p) => 
+    sum + p.memos.reduce((mSum, m) => 
+      mSum + (m.details?.filter(d => d.completed).length || 0), 0
+    ), 0
+  )
   
-  upcomingDeadlines.sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
+  const pendingDetails = totalDetails - completedDetails
+  
+  // 전체 진행률
+  const totalProgress = totalDetails > 0 ? Math.round((completedDetails / totalDetails) * 100) : 0
 
-  // 프로젝트 진행률
+  // 프로젝트 진행률 (상세내용 기준)
   const projectProgress = projects.map(p => {
-    const total = p.todos.length
-    const completed = p.todos.filter(t => t.completed).length
+    const total = p.memos.reduce((sum, m) => sum + (m.details?.length || 0), 0)
+    const completed = p.memos.reduce((sum, m) => 
+      sum + (m.details?.filter(d => d.completed).length || 0), 0
+    )
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0
     return { ...p, progress, completed, total }
   }).sort((a, b) => b.progress - a.progress)
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr)
-    const diff = Math.ceil((date - new Date()) / (1000 * 60 * 60 * 24))
-    
-    if (diff < 0) return { text: `${Math.abs(diff)}일 지남`, className: 'overdue' }
-    if (diff === 0) return { text: '오늘', className: 'soon' }
-    if (diff === 1) return { text: '내일', className: 'soon' }
-    if (diff <= 3) return { text: `${diff}일 남음`, className: 'soon' }
-    return { text: `${diff}일 남음`, className: '' }
-  }
+  // 서클 진행률 SVG 계산
+  const circleRadius = 70
+  const circleCircumference = 2 * Math.PI * circleRadius
+  const circleOffset = circleCircumference - (totalProgress / 100) * circleCircumference
 
   return (
     <>
@@ -68,64 +48,83 @@ function Dashboard({ projects, onSelectProject }) {
             <div className="stat-value">{totalProjects}</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">전체 할 일</div>
-            <div className="stat-value">{totalTodos}</div>
+            <div className="stat-label">전체 항목</div>
+            <div className="stat-value">{totalDetails}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">완료됨</div>
-            <div className="stat-value success">{completedTodos}</div>
+            <div className="stat-value success">{completedDetails}</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">지연됨</div>
-            <div className="stat-value danger">{overdueTodos}</div>
+            <div className="stat-label">진행중</div>
+            <div className="stat-value warning">{pendingDetails}</div>
           </div>
         </div>
 
-        <div className="dashboard-grid">
-          <div className="dashboard-card">
-            <div className="dashboard-card-header">
-              <Clock size={18} />
-              다가오는 마감
-            </div>
-            <div className="dashboard-card-body">
-              {upcomingDeadlines.length === 0 ? (
-                <div className="empty-state">
-                  <Calendar />
-                  <div className="empty-state-title">예정된 할 일이 없어요</div>
-                  <div className="empty-state-desc">마감일이 있는 할 일을 추가해보세요</div>
-                </div>
-              ) : (
-                upcomingDeadlines.slice(0, 5).map(todo => {
-                  const dateInfo = formatDate(todo.due_date)
-                  return (
-                    <div 
-                      key={todo.id} 
-                      className="deadline-item"
-                      onClick={() => onSelectProject(todo.projectId)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div 
-                        className="deadline-color" 
-                        style={{ backgroundColor: todo.projectColor }}
-                      />
-                      <div className="deadline-info">
-                        <div className="deadline-title">{todo.title}</div>
-                        <div className="deadline-project">{todo.projectName}</div>
-                      </div>
-                      <div className={`deadline-date ${dateInfo.className}`}>
-                        {dateInfo.text}
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-
+        <div className="progress-grid">
+          {/* 좌측: 전체 진행률 (서클) */}
           <div className="dashboard-card">
             <div className="dashboard-card-header">
               <TrendingUp size={18} />
-              프로젝트 진행률
+              전체 진행률
+            </div>
+            <div className="dashboard-card-body circle-progress-container">
+              <div className="circle-progress">
+                <svg width="180" height="180" viewBox="0 0 180 180">
+                  <defs>
+                    <linearGradient id="dashboardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="var(--navy)" />
+                      <stop offset="100%" stopColor="var(--blue)" />
+                    </linearGradient>
+                  </defs>
+                  {/* 배경 원 */}
+                  <circle
+                    cx="90"
+                    cy="90"
+                    r={circleRadius}
+                    fill="none"
+                    stroke="var(--border)"
+                    strokeWidth="6"
+                  />
+                  {/* 진행률 원 */}
+                  <circle
+                    cx="90"
+                    cy="90"
+                    r={circleRadius}
+                    fill="none"
+                    stroke="url(#dashboardGradient)"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={circleCircumference}
+                    strokeDashoffset={circleOffset}
+                    transform="rotate(-90 90 90)"
+                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                  />
+                </svg>
+                <div className="circle-progress-text">
+                  <span className="circle-progress-value">{totalProgress}</span>
+                  <span className="circle-progress-unit">%</span>
+                </div>
+              </div>
+              <div className="circle-progress-stats">
+                <div className="circle-stat">
+                  <span className="circle-stat-value success">{completedDetails}</span>
+                  <span className="circle-stat-label">완료</span>
+                </div>
+                <div className="circle-stat-divider" />
+                <div className="circle-stat">
+                  <span className="circle-stat-value warning">{pendingDetails}</span>
+                  <span className="circle-stat-label">진행중</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 우측: 프로젝트별 진행률 */}
+          <div className="dashboard-card">
+            <div className="dashboard-card-header">
+              <FolderOpen size={18} />
+              프로젝트별 진행률
             </div>
             <div className="dashboard-card-body">
               {projectProgress.length === 0 ? (
@@ -135,7 +134,7 @@ function Dashboard({ projects, onSelectProject }) {
                   <div className="empty-state-desc">새 프로젝트를 만들어보세요</div>
                 </div>
               ) : (
-                projectProgress.slice(0, 5).map(project => (
+                projectProgress.map(project => (
                   <div 
                     key={project.id} 
                     className="project-progress-item"

@@ -1,19 +1,78 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron')
 const path = require('path')
 const Store = require('electron-store')
 
 const store = new Store()
 
 let mainWindow
+let tray = null
+
+function createTray() {
+  const iconPath = path.join(__dirname, 'assets', 'tray-iconTemplate.png')
+  const trayIcon = nativeImage.createFromPath(iconPath)
+  
+  tray = new Tray(trayIcon.isEmpty() ? nativeImage.createEmpty() : trayIcon)
+  
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Project Control 열기',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.focus()
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '대시보드',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.webContents.send('navigate', 'dashboard')
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '종료',
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+
+  tray.setToolTip('Project Control')
+  tray.setContextMenu(contextMenu)
+  
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide()
+      } else {
+        mainWindow.show()
+        mainWindow.focus()
+      }
+    }
+  })
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
-    height: 800,
+    height: 720,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false
+    }
+  })
+
+  // 창 닫기 시 숨기기 (트레이에서 계속 실행)
+  mainWindow.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault()
+      mainWindow.hide()
     }
   })
 
@@ -24,12 +83,21 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  createWindow()
+  createTray()
+})
 
 app.on('window-all-closed', () => {
+  // Mac에서는 트레이에서 계속 실행
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+// 창 닫기 버튼 클릭 시 숨기기 (종료 대신)
+app.on('before-quit', () => {
+  app.isQuitting = true
 })
 
 app.on('activate', () => {

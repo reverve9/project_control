@@ -4,7 +4,8 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import ProjectDetail from './components/ProjectDetail'
 import ProjectModal from './components/ProjectModal'
-import TodoModal from './components/TodoModal'
+import MemoModal from './components/MemoModal'
+import InfoModal from './components/InfoModal'
 
 const COLORS = ['#2c3e50', '#3498db', '#27ae60', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c', '#f39c12']
 
@@ -14,18 +15,18 @@ function App() {
   const [activeView, setActiveView] = useState('dashboard')
   const [activeProjectId, setActiveProjectId] = useState(null)
   const [showProjectModal, setShowProjectModal] = useState(false)
-  const [showTodoModal, setShowTodoModal] = useState(false)
+  const [showMemoModal, setShowMemoModal] = useState(false)
+  const [showInfoModal, setShowInfoModal] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
-  const [editingTodo, setEditingTodo] = useState(null)
+  const [editingMemo, setEditingMemo] = useState(null)
+  const [editingInfo, setEditingInfo] = useState(null)
 
-  // 데이터 로드
   useEffect(() => {
     fetchProjects()
   }, [])
 
   const fetchProjects = async () => {
     try {
-      // 프로젝트 조회
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
@@ -33,21 +34,39 @@ function App() {
 
       if (projectsError) throw projectsError
 
-      // 할일 조회
-      const { data: todosData, error: todosError } = await supabase
-        .from('todos')
+      const { data: infosData, error: infosError } = await supabase
+        .from('project_infos')
         .select('*')
         .order('created_at', { ascending: true })
 
-      if (todosError) throw todosError
+      if (infosError) throw infosError
 
-      // 프로젝트에 할일 매핑
-      const projectsWithTodos = projectsData.map(project => ({
-        ...project,
-        todos: todosData.filter(todo => todo.project_id === project.id)
+      const { data: memosData, error: memosError } = await supabase
+        .from('memos')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (memosError) throw memosError
+
+      const { data: detailsData, error: detailsError } = await supabase
+        .from('memo_details')
+        .select('*')
+        .order('created_at', { ascending: true })
+
+      if (detailsError) throw detailsError
+
+      const memosWithDetails = memosData.map(memo => ({
+        ...memo,
+        details: detailsData.filter(d => d.memo_id === memo.id)
       }))
 
-      setProjects(projectsWithTodos)
+      const projectsWithData = projectsData.map(project => ({
+        ...project,
+        infos: infosData.filter(info => info.project_id === project.id),
+        memos: memosWithDetails.filter(memo => memo.project_id === project.id)
+      }))
+
+      setProjects(projectsWithData)
     } catch (error) {
       console.error('데이터 로드 실패:', error)
     } finally {
@@ -57,11 +76,9 @@ function App() {
 
   const activeProject = projects.find(p => p.id === activeProjectId)
 
-  // 프로젝트 추가/수정
   const handleAddProject = async (projectData) => {
     try {
       if (editingProject) {
-        // 수정
         const { error } = await supabase
           .from('projects')
           .update({
@@ -78,7 +95,6 @@ function App() {
         ))
         setEditingProject(null)
       } else {
-        // 추가
         const { data, error } = await supabase
           .from('projects')
           .insert({
@@ -91,7 +107,7 @@ function App() {
 
         if (error) throw error
 
-        setProjects(prev => [...prev, { ...data, todos: [] }])
+        setProjects(prev => [...prev, { ...data, infos: [], memos: [] }])
       }
       setShowProjectModal(false)
     } catch (error) {
@@ -99,7 +115,6 @@ function App() {
     }
   }
 
-  // 프로젝트 삭제
   const handleDeleteProject = async (projectId) => {
     try {
       const { error } = await supabase
@@ -119,111 +134,174 @@ function App() {
     }
   }
 
-  // 할일 추가/수정
-  const handleAddTodo = async (todoData) => {
+  // 프로젝트 인포 저장
+  const handleSaveInfo = async (infoData) => {
     try {
-      if (editingTodo) {
-        // 수정
+      if (editingInfo) {
         const { error } = await supabase
-          .from('todos')
+          .from('project_infos')
           .update({
-            title: todoData.title,
-            due_date: todoData.dueDate
+            type: infoData.type,
+            label: infoData.label,
+            value: infoData.value
           })
-          .eq('id', editingTodo.id)
+          .eq('id', editingInfo.id)
 
         if (error) throw error
-
-        setProjects(prev => prev.map(p => ({
-          ...p,
-          todos: p.todos.map(t =>
-            t.id === editingTodo.id ? { ...t, title: todoData.title, due_date: todoData.dueDate } : t
-          )
-        })))
-        setEditingTodo(null)
       } else {
-        // 추가
-        const { data, error } = await supabase
-          .from('todos')
+        const { error } = await supabase
+          .from('project_infos')
           .insert({
             project_id: activeProjectId,
-            title: todoData.title,
-            due_date: todoData.dueDate,
-            completed: false
+            type: infoData.type,
+            label: infoData.label,
+            value: infoData.value
+          })
+
+        if (error) throw error
+      }
+
+      await fetchProjects()
+      setShowInfoModal(false)
+      setEditingInfo(null)
+    } catch (error) {
+      console.error('인포 저장 실패:', error)
+    }
+  }
+
+  // 프로젝트 인포 삭제
+  const handleDeleteInfo = async (infoId) => {
+    try {
+      const { error } = await supabase
+        .from('project_infos')
+        .delete()
+        .eq('id', infoId)
+
+      if (error) throw error
+
+      await fetchProjects()
+    } catch (error) {
+      console.error('인포 삭제 실패:', error)
+    }
+  }
+
+  const handleSaveMemo = async (memoData) => {
+    try {
+      if (editingMemo) {
+        const { error: memoError } = await supabase
+          .from('memos')
+          .update({ title: memoData.title })
+          .eq('id', editingMemo.id)
+
+        if (memoError) throw memoError
+
+        const { error: deleteError } = await supabase
+          .from('memo_details')
+          .delete()
+          .eq('memo_id', editingMemo.id)
+
+        if (deleteError) throw deleteError
+
+        if (memoData.details.length > 0) {
+          const detailsToInsert = memoData.details.map(d => ({
+            memo_id: editingMemo.id,
+            content: d.content,
+            completed: d.completed,
+            completed_at: d.completed ? (d.completed_at || new Date().toISOString()) : null
+          }))
+
+          const { error: insertError } = await supabase
+            .from('memo_details')
+            .insert(detailsToInsert)
+
+          if (insertError) throw insertError
+        }
+
+        await fetchProjects()
+        setEditingMemo(null)
+      } else {
+        const { data: newMemo, error: memoError } = await supabase
+          .from('memos')
+          .insert({
+            project_id: activeProjectId,
+            title: memoData.title
           })
           .select()
           .single()
 
-        if (error) throw error
+        if (memoError) throw memoError
 
-        setProjects(prev => prev.map(p =>
-          p.id === activeProjectId
-            ? { ...p, todos: [...p.todos, data] }
-            : p
-        ))
+        if (memoData.details.length > 0) {
+          const detailsToInsert = memoData.details.map(d => ({
+            memo_id: newMemo.id,
+            content: d.content,
+            completed: d.completed,
+            completed_at: d.completed ? new Date().toISOString() : null
+          }))
+
+          const { error: insertError } = await supabase
+            .from('memo_details')
+            .insert(detailsToInsert)
+
+          if (insertError) throw insertError
+        }
+
+        await fetchProjects()
       }
-      setShowTodoModal(false)
+      setShowMemoModal(false)
     } catch (error) {
-      console.error('할일 저장 실패:', error)
+      console.error('메모 저장 실패:', error)
     }
   }
 
-  // 할일 완료 토글
-  const handleToggleTodo = async (projectId, todoId) => {
-    const project = projects.find(p => p.id === projectId)
-    const todo = project?.todos.find(t => t.id === todoId)
-    if (!todo) return
+  const handleToggleDetail = async (detailId, currentCompleted) => {
+    const newCompleted = !currentCompleted
+    const completedAt = newCompleted ? new Date().toISOString() : null
 
     try {
       const { error } = await supabase
-        .from('todos')
-        .update({ completed: !todo.completed })
-        .eq('id', todoId)
+        .from('memo_details')
+        .update({ 
+          completed: newCompleted,
+          completed_at: completedAt
+        })
+        .eq('id', detailId)
 
       if (error) throw error
 
-      setProjects(prev => prev.map(p =>
-        p.id === projectId
-          ? {
-              ...p,
-              todos: p.todos.map(t =>
-                t.id === todoId ? { ...t, completed: !t.completed } : t
-              )
-            }
-          : p
-      ))
+      await fetchProjects()
     } catch (error) {
-      console.error('할일 토글 실패:', error)
+      console.error('상세내용 토글 실패:', error)
     }
   }
 
-  // 할일 삭제
-  const handleDeleteTodo = async (projectId, todoId) => {
+  const handleDeleteMemo = async (projectId, memoId) => {
     try {
       const { error } = await supabase
-        .from('todos')
+        .from('memos')
         .delete()
-        .eq('id', todoId)
+        .eq('id', memoId)
 
       if (error) throw error
 
       setProjects(prev => prev.map(p =>
         p.id === projectId
-          ? { ...p, todos: p.todos.filter(t => t.id !== todoId) }
+          ? { ...p, memos: p.memos.filter(m => m.id !== memoId) }
           : p
       ))
     } catch (error) {
-      console.error('할일 삭제 실패:', error)
+      console.error('메모 삭제 실패:', error)
     }
   }
 
-  const handleEditTodo = (todo) => {
-    // DB 필드명을 컴포넌트 필드명으로 변환
-    setEditingTodo({
-      ...todo,
-      dueDate: todo.due_date
-    })
-    setShowTodoModal(true)
+  const handleEditMemo = (memo) => {
+    setEditingMemo(memo)
+    setShowMemoModal(true)
+  }
+
+  const handleEditInfo = (info) => {
+    setEditingInfo(info)
+    setShowInfoModal(true)
   }
 
   const handleEditProject = (project) => {
@@ -267,12 +345,18 @@ function App() {
         ) : activeProject ? (
           <ProjectDetail
             project={activeProject}
-            onToggleTodo={(todoId) => handleToggleTodo(activeProject.id, todoId)}
-            onDeleteTodo={(todoId) => handleDeleteTodo(activeProject.id, todoId)}
-            onEditTodo={handleEditTodo}
-            onAddTodo={() => {
-              setEditingTodo(null)
-              setShowTodoModal(true)
+            onToggleDetail={handleToggleDetail}
+            onDeleteMemo={(memoId) => handleDeleteMemo(activeProject.id, memoId)}
+            onEditMemo={handleEditMemo}
+            onAddMemo={() => {
+              setEditingMemo(null)
+              setShowMemoModal(true)
+            }}
+            onEditInfo={handleEditInfo}
+            onDeleteInfo={handleDeleteInfo}
+            onAddInfo={() => {
+              setEditingInfo(null)
+              setShowInfoModal(true)
             }}
             onEditProject={() => handleEditProject(activeProject)}
             onDeleteProject={() => handleDeleteProject(activeProject.id)}
@@ -292,13 +376,24 @@ function App() {
         />
       )}
 
-      {showTodoModal && (
-        <TodoModal
-          todo={editingTodo}
-          onSave={handleAddTodo}
+      {showMemoModal && (
+        <MemoModal
+          memo={editingMemo}
+          onSave={handleSaveMemo}
           onClose={() => {
-            setShowTodoModal(false)
-            setEditingTodo(null)
+            setShowMemoModal(false)
+            setEditingMemo(null)
+          }}
+        />
+      )}
+
+      {showInfoModal && (
+        <InfoModal
+          info={editingInfo}
+          onSave={handleSaveInfo}
+          onClose={() => {
+            setShowInfoModal(false)
+            setEditingInfo(null)
           }}
         />
       )}
