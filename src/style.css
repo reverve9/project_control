@@ -69,18 +69,24 @@ body {
 
 /* 사이드바 */
 .sidebar {
-  width: 260px;
+  position: relative;
+  width: 310px;
+  height: 720px;
+  max-height: 100vh;
   background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 .sidebar-header {
-  padding: 0 20px 20px;
+  height: 85px;
+  padding: 0 20px;
+  flex-shrink: 0;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .sidebar-logo {
@@ -104,7 +110,9 @@ body {
 
 .sidebar-nav {
   padding: 0 12px;
+  margin-top: 20px;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .nav-item {
@@ -146,10 +154,16 @@ body {
   margin-bottom: 10px;
 }
 
+.sidebar-projects {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .project-list {
   padding: 0 12px;
-  flex: 1;
-  overflow-y: auto;
 }
 
 .project-item {
@@ -205,6 +219,7 @@ body {
   font-size: var(--font-14);
   cursor: pointer;
   transition: all 0.15s;
+  flex-shrink: 0;
 }
 
 .add-project-btn:hover {
@@ -215,15 +230,22 @@ body {
 /* 메인 컨텐츠 */
 .main-content {
   flex: 1;
+  height: 720px;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 .content-header {
-  padding: 24px 32px;
+  height: 85px;
+  padding: 0 35px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .content-header-row {
@@ -250,7 +272,7 @@ body {
 
 .content-body {
   flex: 1;
-  padding: 24px 32px;
+  padding: 24px 35px;
   overflow-y: auto;
 }
 
@@ -357,7 +379,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
 }
 
 .project-title-section {
@@ -1200,8 +1221,13 @@ body {
 }
 
 .btn-sm {
-  padding: 6px 12px;
-  font-size: var(--font-16);
+  padding: 5px 10px;
+  font-size: var(--font-13);
+}
+
+.btn-sm svg {
+  width: 12px;
+  height: 12px;
 }
 
 /* 모달 */
@@ -1390,7 +1416,7 @@ body {
 }
 
 .project-progress-name {
-  font-size: var(--font-15);
+  font-size: var(--font-14);
   color: var(--text-primary);
   margin-bottom: 10px;
 }
@@ -1408,7 +1434,7 @@ body {
 }
 
 .project-progress-value {
-  font-size: var(--font-14);
+  font-size: var(--font-13);
   font-weight: var(--weight-500);
   color: var(--text-secondary);
   min-width: 36px;
@@ -1450,11 +1476,12 @@ body {
   scrollbar-color: var(--border-light) transparent;
 }
 
-/* 사이드바 푸터 (로그아웃) */
+/* 사이드바 푸터 (설정) */
 .sidebar-footer {
   padding: 16px 12px;
   border-top: 1px solid var(--border);
-  margin-top: auto;
+  background: var(--bg-secondary);
+  flex-shrink: 0;
 }
 
 .sidebar-user {
@@ -1462,7 +1489,7 @@ body {
 }
 
 .sidebar-user-email {
-  font-size: var(--font-12);
+  font-size: var(--font-14);
   color: var(--text-secondary);
   display: block;
   overflow: hidden;
@@ -1494,16 +1521,21 @@ body {
 .sidebar-settings-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   padding: 10px 14px;
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--text-secondary);
-  font-size: var(--font-14);
+  color: var(--text-muted);
+  font-size: var(--font-16);
   cursor: pointer;
   transition: all 0.15s;
+}
+
+.sidebar-settings-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .sidebar-settings-btn:hover {

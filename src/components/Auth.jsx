@@ -68,11 +68,9 @@ function Auth({ onAuthSuccess }) {
               invite_code: inviteCode.trim().toUpperCase() || null
             })
 
-          if (autoApprove) {
-            onAuthSuccess(data.user)
-          } else {
-            setMessage('가입이 완료되었습니다. 관리자 승인 후 사용 가능합니다.')
-          }
+          // 자동 승인이든 아니든 onAuthSuccess 호출
+          // App.jsx에서 approved 체크해서 대기 화면 보여줌
+          onAuthSuccess(data.user)
         }
       }
     } catch (err) {
