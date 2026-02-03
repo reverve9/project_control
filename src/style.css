@@ -527,7 +527,7 @@ body {
 .info-value-box {
   flex: 1;
   min-width: 0;
-  max-width: calc(100% - 30px);
+  max-width: calc(100% - 50px);
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -936,6 +936,94 @@ body {
 /* 대시보드 풀 와이드 카드 */
 .dashboard-card.full-width {
   grid-column: 1 / -1;
+}
+
+/* 빠른 메모 폼 */
+.quick-memo-form {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.quick-memo-form-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.quick-memo-form-vertical .form-group {
+  margin-bottom: 12px;
+}
+
+.quick-memo-form-vertical .form-group:last-of-type {
+  margin-bottom: 16px;
+}
+
+.quick-memo-form-vertical .btn {
+  width: 100%;
+}
+
+.quick-memo-select {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.quick-memo-title {
+  flex: 1;
+}
+
+.quick-memo-detail {
+  flex: 1;
+}
+
+/* 전체 메모 그리드 */
+.all-memo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.all-memo-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.all-memo-card:hover {
+  border-color: var(--navy);
+}
+
+.all-memo-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.all-memo-date {
+  font-size: 12px;
+  font-weight: 300;
+  color: #95a5a6;
+}
+
+.all-memo-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.all-memo-project {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 /* 진행률 2열 그리드 */

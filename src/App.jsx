@@ -30,7 +30,7 @@ function App() {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
-        .order('created_at', { ascending: true })
+        .order('updated_at', { ascending: false })
 
       if (projectsError) throw projectsError
 
@@ -75,6 +75,14 @@ function App() {
   }
 
   const activeProject = projects.find(p => p.id === activeProjectId)
+
+  // 프로젝트 updated_at 업데이트
+  const updateProjectTimestamp = async (projectId) => {
+    await supabase
+      .from('projects')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', projectId)
+  }
 
   const handleAddProject = async (projectData) => {
     try {
@@ -161,6 +169,7 @@ function App() {
         if (error) throw error
       }
 
+      await updateProjectTimestamp(activeProjectId)
       await fetchProjects()
       setShowInfoModal(false)
       setEditingInfo(null)
@@ -179,6 +188,7 @@ function App() {
 
       if (error) throw error
 
+      await updateProjectTimestamp(activeProjectId)
       await fetchProjects()
     } catch (error) {
       console.error('인포 삭제 실패:', error)
@@ -217,6 +227,7 @@ function App() {
           if (insertError) throw insertError
         }
 
+        await updateProjectTimestamp(activeProjectId)
         await fetchProjects()
         setEditingMemo(null)
       } else {
@@ -246,6 +257,7 @@ function App() {
           if (insertError) throw insertError
         }
 
+        await updateProjectTimestamp(activeProjectId)
         await fetchProjects()
       }
       setShowMemoModal(false)
@@ -269,6 +281,7 @@ function App() {
 
       if (error) throw error
 
+      await updateProjectTimestamp(activeProjectId)
       await fetchProjects()
     } catch (error) {
       console.error('상세내용 토글 실패:', error)
@@ -284,6 +297,7 @@ function App() {
 
       if (error) throw error
 
+      await updateProjectTimestamp(projectId)
       setProjects(prev => prev.map(p =>
         p.id === projectId
           ? { ...p, memos: p.memos.filter(m => m.id !== memoId) }
@@ -297,6 +311,42 @@ function App() {
   const handleEditMemo = (memo) => {
     setEditingMemo(memo)
     setShowMemoModal(true)
+  }
+
+  // 대시보드에서 빠른 메모 추가
+  const handleQuickAddMemo = async (projectId, memoData) => {
+    try {
+      const { data: newMemo, error: memoError } = await supabase
+        .from('memos')
+        .insert({
+          project_id: projectId,
+          title: memoData.title
+        })
+        .select()
+        .single()
+
+      if (memoError) throw memoError
+
+      if (memoData.details.length > 0) {
+        const detailsToInsert = memoData.details.map(d => ({
+          memo_id: newMemo.id,
+          content: d.content,
+          completed: d.completed,
+          completed_at: null
+        }))
+
+        const { error: insertError } = await supabase
+          .from('memo_details')
+          .insert(detailsToInsert)
+
+        if (insertError) throw insertError
+      }
+
+      await updateProjectTimestamp(projectId)
+      await fetchProjects()
+    } catch (error) {
+      console.error('빠른 메모 추가 실패:', error)
+    }
   }
 
   const handleEditInfo = (info) => {
@@ -341,6 +391,7 @@ function App() {
           <Dashboard
             projects={projects}
             onSelectProject={selectProject}
+            onAddMemo={handleQuickAddMemo}
           />
         ) : activeProject ? (
           <ProjectDetail

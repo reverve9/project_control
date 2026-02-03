@@ -1,6 +1,11 @@
-import { FolderOpen, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import { FolderOpen, Plus, FileText } from 'lucide-react'
 
-function Dashboard({ projects, onSelectProject }) {
+function Dashboard({ projects, onSelectProject, onAddMemo }) {
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [memoTitle, setMemoTitle] = useState('')
+  const [memoDetail, setMemoDetail] = useState('')
+
   // 통계 계산 (상세내용 기준)
   const totalProjects = projects.length
   
@@ -15,9 +20,6 @@ function Dashboard({ projects, onSelectProject }) {
   )
   
   const pendingDetails = totalDetails - completedDetails
-  
-  // 전체 진행률
-  const totalProgress = totalDetails > 0 ? Math.round((completedDetails / totalDetails) * 100) : 0
 
   // 프로젝트 진행률 (상세내용 기준)
   const projectProgress = projects.map(p => {
@@ -29,10 +31,42 @@ function Dashboard({ projects, onSelectProject }) {
     return { ...p, progress, completed, total }
   }).sort((a, b) => b.progress - a.progress)
 
-  // 서클 진행률 SVG 계산
-  const circleRadius = 70
-  const circleCircumference = 2 * Math.PI * circleRadius
-  const circleOffset = circleCircumference - (totalProgress / 100) * circleCircumference
+  // 전체 메모 (최신순)
+  const allMemos = projects.flatMap(p => 
+    p.memos.map(m => ({ ...m, projectName: p.name, projectColor: p.color, projectId: p.id }))
+  ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${month}/${day}`
+  }
+
+  const handleSubmitMemo = (e) => {
+    e.preventDefault()
+    if (!selectedProjectId || !memoTitle.trim()) return
+
+    const details = memoDetail.trim() 
+      ? [{ content: memoDetail.trim(), completed: false }] 
+      : []
+
+    onAddMemo(selectedProjectId, {
+      title: memoTitle.trim(),
+      details
+    })
+
+    setMemoTitle('')
+    setMemoDetail('')
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      handleSubmitMemo(e)
+    }
+  }
 
   return (
     <>
@@ -62,74 +96,16 @@ function Dashboard({ projects, onSelectProject }) {
         </div>
 
         <div className="progress-grid">
-          {/* 좌측: 전체 진행률 (서클) */}
+          {/* 좌측: 프로젝트별 진행률 */}
           <div className="dashboard-card">
             <div className="dashboard-card-header">
-              <TrendingUp size={18} />
-              전체 진행률
-            </div>
-            <div className="dashboard-card-body circle-progress-container">
-              <div className="circle-progress">
-                <svg width="180" height="180" viewBox="0 0 180 180">
-                  <defs>
-                    <linearGradient id="dashboardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="var(--navy)" />
-                      <stop offset="100%" stopColor="var(--blue)" />
-                    </linearGradient>
-                  </defs>
-                  {/* 배경 원 */}
-                  <circle
-                    cx="90"
-                    cy="90"
-                    r={circleRadius}
-                    fill="none"
-                    stroke="var(--border)"
-                    strokeWidth="6"
-                  />
-                  {/* 진행률 원 */}
-                  <circle
-                    cx="90"
-                    cy="90"
-                    r={circleRadius}
-                    fill="none"
-                    stroke="url(#dashboardGradient)"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    strokeDasharray={circleCircumference}
-                    strokeDashoffset={circleOffset}
-                    transform="rotate(-90 90 90)"
-                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                  />
-                </svg>
-                <div className="circle-progress-text">
-                  <span className="circle-progress-value">{totalProgress}</span>
-                  <span className="circle-progress-unit">%</span>
-                </div>
-              </div>
-              <div className="circle-progress-stats">
-                <div className="circle-stat">
-                  <span className="circle-stat-value success">{completedDetails}</span>
-                  <span className="circle-stat-label">완료</span>
-                </div>
-                <div className="circle-stat-divider" />
-                <div className="circle-stat">
-                  <span className="circle-stat-value warning">{pendingDetails}</span>
-                  <span className="circle-stat-label">진행중</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 우측: 프로젝트별 진행률 */}
-          <div className="dashboard-card">
-            <div className="dashboard-card-header">
-              <FolderOpen size={18} />
+              <FolderOpen size={18} strokeWidth={1.2} />
               프로젝트별 진행률
             </div>
             <div className="dashboard-card-body">
               {projectProgress.length === 0 ? (
                 <div className="empty-state">
-                  <FolderOpen />
+                  <FolderOpen strokeWidth={1.2} />
                   <div className="empty-state-title">프로젝트가 없어요</div>
                   <div className="empty-state-desc">새 프로젝트를 만들어보세요</div>
                 </div>
@@ -162,6 +138,100 @@ function Dashboard({ projects, onSelectProject }) {
                 ))
               )}
             </div>
+          </div>
+
+          {/* 우측: 빠른 메모 입력 */}
+          <div className="dashboard-card">
+            <div className="dashboard-card-header">
+              <Plus size={18} strokeWidth={1.2} />
+              빠른 메모 추가
+            </div>
+            <div className="dashboard-card-body">
+              <form onSubmit={handleSubmitMemo} className="quick-memo-form-vertical">
+                <div className="form-group">
+                  <label className="form-label">프로젝트</label>
+                  <select
+                    className="form-input"
+                    value={selectedProjectId}
+                    onChange={e => setSelectedProjectId(e.target.value)}
+                  >
+                    <option value="">프로젝트 선택</option>
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">제목</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="메모 제목"
+                    value={memoTitle}
+                    onChange={e => setMemoTitle(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">상세내용 (선택)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="상세내용 입력"
+                    value={memoDetail}
+                    onChange={e => setMemoDetail(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={!selectedProjectId || !memoTitle.trim()}
+                >
+                  <Plus size={16} strokeWidth={1.2} />
+                  메모 추가
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        {/* 전체 메모 리스트 */}
+        <div className="dashboard-card full-width">
+          <div className="dashboard-card-header">
+            <FileText size={18} strokeWidth={1.2} />
+            전체 메모
+          </div>
+          <div className="dashboard-card-body">
+            {allMemos.length === 0 ? (
+              <div className="empty-state">
+                <FileText strokeWidth={1.2} />
+                <div className="empty-state-title">메모가 없어요</div>
+                <div className="empty-state-desc">위에서 빠른 메모를 추가해보세요</div>
+              </div>
+            ) : (
+              <div className="all-memo-grid">
+                {allMemos.map(memo => (
+                  <div 
+                    key={memo.id} 
+                    className="all-memo-card"
+                    onClick={() => onSelectProject(memo.projectId)}
+                  >
+                    <div className="all-memo-header">
+                      <span className="all-memo-date">[{formatDate(memo.created_at)}]</span>
+                      <span className="all-memo-title">{memo.title}</span>
+                    </div>
+                    <div className="all-memo-project">
+                      <div 
+                        className="project-color" 
+                        style={{ backgroundColor: memo.projectColor }}
+                      />
+                      <span>{memo.projectName}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
