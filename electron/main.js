@@ -121,3 +121,8 @@ ipcMain.handle('save-data', (event, data) => {
   store.set('projectData', data)
   return true
 })
+
+ipcMain.handle('open-style-guide', () => {
+  const stylePath = path.join(__dirname, '../STYLE_GUIDE.md')
+  shell.openPath(stylePath)
+})

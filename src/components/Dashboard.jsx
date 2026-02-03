@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { FolderOpen, Plus, FileText } from 'lucide-react'
+import { FolderOpen, Plus, FileText, Palette } from 'lucide-react'
 
-function Dashboard({ projects, onSelectProject, onAddMemo }) {
+function Dashboard({ projects, onSelectProject, onAddMemo, onOpenStyleGuide }) {
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [memoTitle, setMemoTitle] = useState('')
   const [memoDetail, setMemoDetail] = useState('')
@@ -71,8 +71,14 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
   return (
     <>
       <header className="content-header">
-        <h1 className="content-title">대시보드</h1>
-        <p className="content-subtitle">전체 프로젝트 현황을 한눈에 확인하세요</p>
+        <div className="content-header-left">
+          <h1 className="content-title">대시보드</h1>
+          <p className="content-subtitle">전체 프로젝트 현황을 한눈에 확인하세요</p>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={onOpenStyleGuide}>
+          <Palette size={16} />
+          스타일 가이드
+        </button>
       </header>
 
       <div className="content-body">
@@ -133,7 +139,10 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
                         />
                       </div>
                     </div>
-                    <div className="project-progress-value">{project.progress}%</div>
+                    <div className="project-progress-stats">
+                      <span className="project-progress-count">{project.completed}/{project.total}</span>
+                      <span className="project-progress-value">{project.progress}%</span>
+                    </div>
                   </div>
                 ))
               )}
@@ -143,8 +152,19 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
           {/* 우측: 빠른 메모 입력 */}
           <div className="dashboard-card">
             <div className="dashboard-card-header">
-              <Plus size={18} strokeWidth={1.2} />
-              빠른 메모 추가
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Plus size={18} strokeWidth={1.2} />
+                빠른 메모 추가
+              </div>
+              <button 
+                type="button" 
+                className="btn btn-primary btn-sm"
+                disabled={!selectedProjectId || !memoTitle.trim()}
+                onClick={handleSubmitMemo}
+              >
+                <Plus size={14} strokeWidth={1.2} />
+                추가
+              </button>
             </div>
             <div className="dashboard-card-body">
               <form onSubmit={handleSubmitMemo} className="quick-memo-form-vertical">
@@ -183,14 +203,6 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
                     onKeyDown={handleKeyDown}
                   />
                 </div>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={!selectedProjectId || !memoTitle.trim()}
-                >
-                  <Plus size={16} strokeWidth={1.2} />
-                  메모 추가
-                </button>
               </form>
             </div>
           </div>

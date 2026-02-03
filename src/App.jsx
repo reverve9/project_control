@@ -392,6 +392,7 @@ function App() {
             projects={projects}
             onSelectProject={selectProject}
             onAddMemo={handleQuickAddMemo}
+            onOpenStyleGuide={() => window.electronAPI?.openStyleGuide?.()}
           />
         ) : activeProject ? (
           <ProjectDetail
