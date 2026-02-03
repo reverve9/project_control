@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron')
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell } = require('electron')
 const path = require('path')
 const Store = require('electron-store')
 
@@ -66,6 +66,12 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false
     }
+  })
+
+  // 외부 링크는 기본 브라우저에서 열기
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url)
+    return { action: 'deny' }
   })
 
   // 창 닫기 시 숨기기 (트레이에서 계속 실행)
