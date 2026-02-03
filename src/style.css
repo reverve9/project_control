@@ -221,12 +221,15 @@ body {
 }
 
 .content-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   padding: 24px 32px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
+}
+
+.content-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .content-header-left {
