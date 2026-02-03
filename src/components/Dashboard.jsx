@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { FolderOpen, Plus, FileText, Palette } from 'lucide-react'
+import { FolderOpen, Plus, FileText } from 'lucide-react'
 
-function Dashboard({ projects, onSelectProject, onAddMemo, onOpenStyleGuide }) {
+function Dashboard({ projects, onSelectProject, onAddMemo }) {
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [memoTitle, setMemoTitle] = useState('')
   const [memoDetail, setMemoDetail] = useState('')
@@ -71,16 +71,8 @@ function Dashboard({ projects, onSelectProject, onAddMemo, onOpenStyleGuide }) {
   return (
     <>
       <header className="content-header">
-        <div className="content-header-row">
-          <div className="content-header-left">
-            <h1 className="content-title">대시보드</h1>
-            <p className="content-subtitle">전체 프로젝트 현황을 한눈에 확인하세요</p>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={onOpenStyleGuide}>
-            <Palette size={16} />
-            스타일 가이드
-          </button>
-        </div>
+        <h1 className="content-title">대시보드</h1>
+        <p className="content-subtitle">전체 프로젝트 현황을 한눈에 확인하세요</p>
       </header>
 
       <div className="content-body">

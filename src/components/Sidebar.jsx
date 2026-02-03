@@ -1,6 +1,6 @@
-import { LayoutDashboard, Plus } from 'lucide-react'
+import { LayoutDashboard, Plus, Settings } from 'lucide-react'
 
-function Sidebar({ projects, activeView, activeProjectId, onSelectDashboard, onSelectProject, onAddProject }) {
+function Sidebar({ projects, activeView, activeProjectId, onSelectDashboard, onSelectProject, onAddProject, user, userProfile, onOpenSettings }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -53,6 +53,19 @@ function Sidebar({ projects, activeView, activeProjectId, onSelectDashboard, onS
         <Plus size={16} />
         새 프로젝트
       </button>
+
+      <div className="sidebar-footer">
+        <div className="sidebar-user">
+          <span className="sidebar-user-email">{user?.email}</span>
+          {userProfile?.role === 'admin' && (
+            <span className="sidebar-user-badge">관리자</span>
+          )}
+        </div>
+        <button className="sidebar-settings-btn" onClick={onOpenSettings}>
+          <Settings size={16} />
+          설정
+        </button>
+      </div>
     </aside>
   )
 }

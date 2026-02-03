@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
+import Auth from './components/Auth'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import ProjectDetail from './components/ProjectDetail'
 import ProjectModal from './components/ProjectModal'
 import MemoModal from './components/MemoModal'
 import InfoModal from './components/InfoModal'
+import SettingsPanel from './components/SettingsPanel'
 
 const COLORS = ['#2c3e50', '#3498db', '#27ae60', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c', '#f39c12']
 
 function App() {
+  const [user, setUser] = useState(null)
+  const [userProfile, setUserProfile] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeView, setActiveView] = useState('dashboard')
@@ -17,13 +22,80 @@ function App() {
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [showMemoModal, setShowMemoModal] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [editingMemo, setEditingMemo] = useState(null)
   const [editingInfo, setEditingInfo] = useState(null)
 
+  // 인증 상태 체크
   useEffect(() => {
-    fetchProjects()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setAuthLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
+
+  // 유저 프로필 가져오기
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile()
+      fetchProjects()
+    }
+  }, [user])
+
+  const fetchUserProfile = async () => {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+    
+    if (data) {
+      setUserProfile(data)
+    }
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setProjects([])
+    setUserProfile(null)
+    setActiveView('dashboard')
+    setActiveProjectId(null)
+  }
+
+  // 로그인 안 됐으면 Auth 화면
+  if (authLoading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>로딩중...</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Auth onAuthSuccess={setUser} />
+  }
+
+  // 승인 안 됐으면 대기 화면
+  if (userProfile && !userProfile.approved) {
+    return (
+      <div className="pending-screen">
+        <div className="pending-card">
+          <h2>승인 대기 중</h2>
+          <p>관리자의 승인을 기다리고 있습니다.</p>
+          <p className="pending-email">{user.email}</p>
+          <button className="btn btn-ghost" onClick={handleLogout}>로그아웃</button>
+        </div>
+      </div>
+    )
+  }
 
   const fetchProjects = async () => {
     try {
@@ -108,7 +180,8 @@ function App() {
           .insert({
             name: projectData.name,
             description: projectData.description,
-            color: projectData.color
+            color: projectData.color,
+            user_id: user.id
           })
           .select()
           .single()
@@ -163,7 +236,8 @@ function App() {
             project_id: activeProjectId,
             type: infoData.type,
             label: infoData.label,
-            value: infoData.value
+            value: infoData.value,
+            user_id: user.id
           })
 
         if (error) throw error
@@ -217,7 +291,8 @@ function App() {
             memo_id: editingMemo.id,
             content: d.content,
             completed: d.completed,
-            completed_at: d.completed ? (d.completed_at || new Date().toISOString()) : null
+            completed_at: d.completed ? (d.completed_at || new Date().toISOString()) : null,
+            user_id: user.id
           }))
 
           const { error: insertError } = await supabase
@@ -235,7 +310,8 @@ function App() {
           .from('memos')
           .insert({
             project_id: activeProjectId,
-            title: memoData.title
+            title: memoData.title,
+            user_id: user.id
           })
           .select()
           .single()
@@ -247,7 +323,8 @@ function App() {
             memo_id: newMemo.id,
             content: d.content,
             completed: d.completed,
-            completed_at: d.completed ? new Date().toISOString() : null
+            completed_at: d.completed ? new Date().toISOString() : null,
+            user_id: user.id
           }))
 
           const { error: insertError } = await supabase
@@ -320,7 +397,8 @@ function App() {
         .from('memos')
         .insert({
           project_id: projectId,
-          title: memoData.title
+          title: memoData.title,
+          user_id: user.id
         })
         .select()
         .single()
@@ -332,7 +410,8 @@ function App() {
           memo_id: newMemo.id,
           content: d.content,
           completed: d.completed,
-          completed_at: null
+          completed_at: null,
+          user_id: user.id
         }))
 
         const { error: insertError } = await supabase
@@ -384,6 +463,9 @@ function App() {
           setEditingProject(null)
           setShowProjectModal(true)
         }}
+        user={user}
+        userProfile={userProfile}
+        onOpenSettings={() => setShowSettingsPanel(true)}
       />
 
       <main className="main-content">
@@ -392,7 +474,6 @@ function App() {
             projects={projects}
             onSelectProject={selectProject}
             onAddMemo={handleQuickAddMemo}
-            onOpenStyleGuide={() => window.electronAPI?.openStyleGuide?.()}
           />
         ) : activeProject ? (
           <ProjectDetail
@@ -447,6 +528,15 @@ function App() {
             setShowInfoModal(false)
             setEditingInfo(null)
           }}
+        />
+      )}
+
+      {showSettingsPanel && (
+        <SettingsPanel
+          user={user}
+          userProfile={userProfile}
+          onClose={() => setShowSettingsPanel(false)}
+          onLogout={handleLogout}
         />
       )}
     </div>
