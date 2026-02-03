@@ -43,23 +43,24 @@ function App() {
 
   // 유저 프로필 가져오기
   useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      
+      if (data) {
+        setUserProfile(data)
+      }
+    }
+
     if (user) {
       fetchUserProfile()
       fetchProjects()
     }
   }, [user])
-
-  const fetchUserProfile = async () => {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-    
-    if (data) {
-      setUserProfile(data)
-    }
-  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
