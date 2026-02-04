@@ -1065,10 +1065,9 @@ body {
 }
 
 .memo-card-date {
-  font-size: var(--font-12);
-  font-weight: var(--weight-500);
-  color: var(--text-secondary);
-  margin-right: 8px;
+  font-size: var(--font-13);
+  font-weight: var(--weight-300);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -1355,10 +1354,9 @@ body {
 }
 
 .all-memo-date {
-  font-size: 11px;
-  font-weight: var(--weight-500);
+  font-size: var(--font-12);
+  font-weight: var(--weight-300);
   color: var(--text-muted);
-  flex-shrink: 0;
 }
 
 .all-memo-title {

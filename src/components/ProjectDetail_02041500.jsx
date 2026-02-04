@@ -269,7 +269,6 @@ function ProjectDetail({
                     className={`memo-card ${memoCompleted ? 'all-completed' : ''}`}
                   >
                     <div className="memo-card-header">
-                      <span className="memo-card-date">{formatDate(memo.created_at)}</span>
                       <span 
                         className="memo-card-title"
                         onClick={() => onEditMemo(memo)}

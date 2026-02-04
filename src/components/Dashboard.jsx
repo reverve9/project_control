@@ -6,6 +6,14 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
   const [memoTitle, setMemoTitle] = useState('')
   const [memoDetail, setMemoDetail] = useState('')
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${month}/${day}`
+  }
+
   // 통계 계산 (상세내용 기준)
   const totalProjects = projects.length
   
@@ -209,6 +217,7 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
                     onClick={() => onSelectProject(memo.projectId)}
                   >
                     <div className="all-memo-header">
+                      <span className="all-memo-date">{formatDate(memo.created_at)}</span>
                       <span className="all-memo-title">{memo.title}</span>
                     </div>
                     <div className="all-memo-project">
