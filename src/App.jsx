@@ -701,26 +701,54 @@ function App() {
   // 프로젝트 순서/카테고리 변경
   const handleReorderProject = async (projectId, targetProjectId, newCategoryId) => {
     try {
-      // 카테고리만 변경
+      // 카테고리만 변경 (헤더에 드롭)
       if (targetProjectId === null) {
+        // 해당 카테고리의 마지막 순서 찾기
+        const categoryProjects = projects.filter(p => p.category_id === newCategoryId)
+        const maxOrder = categoryProjects.reduce((max, p) => Math.max(max, p.sort_order || 0), -1)
+        
         const { error } = await supabase
           .from('projects')
-          .update({ category_id: newCategoryId })
+          .update({ 
+            category_id: newCategoryId,
+            sort_order: maxOrder + 1
+          })
           .eq('id', projectId)
 
         if (error) throw error
       } else {
         // 순서 변경 로직
+        const draggedProject = projects.find(p => p.id === projectId)
         const targetProject = projects.find(p => p.id === targetProjectId)
-        const { error } = await supabase
-          .from('projects')
-          .update({ 
-            category_id: newCategoryId,
-            sort_order: targetProject?.sort_order || 0
-          })
-          .eq('id', projectId)
-
-        if (error) throw error
+        
+        // 같은 카테고리 내 프로젝트들
+        const categoryProjects = projects
+          .filter(p => p.category_id === newCategoryId && p.id !== projectId)
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        
+        // 타겟 위치 찾기
+        const targetIndex = categoryProjects.findIndex(p => p.id === targetProjectId)
+        
+        // 드래그한 프로젝트를 타겟 위치에 삽입
+        categoryProjects.splice(targetIndex, 0, { ...draggedProject, category_id: newCategoryId })
+        
+        // 전체 순서 재정렬
+        const updates = categoryProjects.map((p, index) => ({
+          id: p.id,
+          sort_order: index,
+          category_id: newCategoryId
+        }))
+        
+        // 배치 업데이트
+        for (const update of updates) {
+          await supabase
+            .from('projects')
+            .update({ 
+              sort_order: update.sort_order,
+              category_id: update.category_id
+            })
+            .eq('id', update.id)
+        }
       }
 
       await fetchProjects()

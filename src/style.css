@@ -62,7 +62,7 @@ body {
 /* 앱 레이아웃 */
 .app {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -71,8 +71,7 @@ body {
 .sidebar {
   position: relative;
   width: 310px;
-  height: 720px;
-  max-height: 100vh;
+  height: 100%;
   background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
@@ -170,11 +169,11 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 0 14px 0 26px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .project-item:hover {
@@ -2534,8 +2533,8 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px 8px 14px;
-  margin: 0 12px;
+  padding: 0px 0px 0 10px;
+  margin: 0 0px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
@@ -2608,4 +2607,29 @@ body {
 
 .project-item[draggable="true"]:active {
   cursor: grabbing;
+}
+
+/* 드롭존 */
+.dropzone {
+  height: 20px;
+  margin: 0 12px;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.dropzone.active {
+  background: transparent;
+}
+
+.dropzone-top {
+  height: 15px;
+  margin-top: 0;
+}
+
+.dropzone-bottom {
+  height: 15px;
+}
+
+.category-projects {
+  padding: 0;
 }

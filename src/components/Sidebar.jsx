@@ -20,6 +20,7 @@ function Sidebar({
   const [expandedCategories, setExpandedCategories] = useState({})
   const [draggedProject, setDraggedProject] = useState(null)
   const [dragOverCategory, setDragOverCategory] = useState(null)
+  const [dragOverDropzone, setDragOverDropzone] = useState(null)
 
   const toggleCategory = (categoryId) => {
     setExpandedCategories(prev => ({
@@ -94,6 +95,41 @@ function Sidebar({
   const handleDragEnd = () => {
     setDraggedProject(null)
     setDragOverCategory(null)
+    setDragOverDropzone(null)
+  }
+
+  // 드롭존 핸들러
+  const handleDropzoneDragOver = (e, dropzoneId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!draggedProject) return
+    setDragOverDropzone(dropzoneId)
+  }
+
+  const handleDropzoneDragLeave = (e) => {
+    e.stopPropagation()
+    setDragOverDropzone(null)
+  }
+
+  const handleDropzoneDrop = (e, position, categoryId, categoryProjects) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!draggedProject) return
+
+    // position: 'top', 'bottom', 또는 프로젝트 인덱스
+    let targetProjectId = null
+    
+    if (position === 'top' && categoryProjects.length > 0) {
+      targetProjectId = categoryProjects[0].id
+    } else if (position === 'bottom') {
+      targetProjectId = null // 맨 뒤로
+    } else if (typeof position === 'number' && categoryProjects[position]) {
+      targetProjectId = categoryProjects[position].id
+    }
+
+    onReorderProject(draggedProject.id, targetProjectId, categoryId)
+    setDraggedProject(null)
+    setDragOverDropzone(null)
   }
 
   const renderProject = (project, categoryId) => {
@@ -188,7 +224,25 @@ function Sidebar({
               
               {expandedCategories[category.id] && (
                 <div className="category-projects">
-                  {category.projects.map(project => renderProject(project, category.id))}
+                  {/* 상단 드롭존 */}
+                  <div 
+                    className={`dropzone dropzone-top ${dragOverDropzone === `${category.id}-top` ? 'active' : ''}`}
+                    onDragOver={(e) => handleDropzoneDragOver(e, `${category.id}-top`)}
+                    onDragLeave={handleDropzoneDragLeave}
+                    onDrop={(e) => handleDropzoneDrop(e, 'top', category.id, category.projects)}
+                  />
+                  {category.projects.map((project, index) => (
+                    <div key={project.id}>
+                      {renderProject(project, category.id)}
+                      {/* 프로젝트 사이 드롭존 */}
+                      <div 
+                        className={`dropzone ${dragOverDropzone === `${category.id}-${index}` ? 'active' : ''}`}
+                        onDragOver={(e) => handleDropzoneDragOver(e, `${category.id}-${index}`)}
+                        onDragLeave={handleDropzoneDragLeave}
+                        onDrop={(e) => handleDropzoneDrop(e, index + 1, category.id, category.projects)}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -223,7 +277,25 @@ function Sidebar({
               
               {expandedCategories['uncategorized'] && (
                 <div className="category-projects">
-                  {uncategorizedProjects.map(project => renderProject(project, null))}
+                  {/* 상단 드롭존 */}
+                  <div 
+                    className={`dropzone dropzone-top ${dragOverDropzone === 'uncategorized-top' ? 'active' : ''}`}
+                    onDragOver={(e) => handleDropzoneDragOver(e, 'uncategorized-top')}
+                    onDragLeave={handleDropzoneDragLeave}
+                    onDrop={(e) => handleDropzoneDrop(e, 'top', null, uncategorizedProjects)}
+                  />
+                  {uncategorizedProjects.map((project, index) => (
+                    <div key={project.id}>
+                      {renderProject(project, null)}
+                      {/* 프로젝트 사이 드롭존 */}
+                      <div 
+                        className={`dropzone ${dragOverDropzone === `uncategorized-${index}` ? 'active' : ''}`}
+                        onDragOver={(e) => handleDropzoneDragOver(e, `uncategorized-${index}`)}
+                        onDragLeave={handleDropzoneDragLeave}
+                        onDrop={(e) => handleDropzoneDrop(e, index + 1, null, uncategorizedProjects)}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
