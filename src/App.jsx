@@ -8,7 +8,6 @@ import ProjectModal from './components/ProjectModal'
 import MemoModal from './components/MemoModal'
 import InfoModal from './components/InfoModal'
 import SettingsPanel from './components/SettingsPanel'
-import CleanupModal from './components/CleanupModal'
 
 const COLORS = ['#2c3e50', '#3498db', '#27ae60', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c', '#f39c12']
 
@@ -24,7 +23,6 @@ function App() {
   const [showMemoModal, setShowMemoModal] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
-  const [showCleanupModal, setShowCleanupModal] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [editingMemo, setEditingMemo] = useState(null)
   const [editingInfo, setEditingInfo] = useState(null)
@@ -315,7 +313,8 @@ function App() {
           .insert({
             project_id: activeProjectId,
             title: memoData.title,
-            user_id: user.id
+            user_id: user.id,
+            started_at: new Date().toISOString()
           })
           .select()
           .single()
@@ -402,7 +401,8 @@ function App() {
         .insert({
           project_id: projectId,
           title: memoData.title,
-          user_id: user.id
+          user_id: user.id,
+          started_at: new Date().toISOString()
         })
         .select()
         .single()
@@ -501,9 +501,17 @@ function App() {
   }
 
   const handleArchiveMemo = async (memoId) => {
-    // TODO: 보관 기능 구현 (archived 컬럼 추가 필요)
-    // 일단은 삭제와 동일하게 처리하거나 스킵
-    console.log('보관 기능은 추후 구현')
+    try {
+      const { error } = await supabase
+        .from('memos')
+        .update({ archived: true })
+        .eq('id', memoId)
+
+      if (error) throw error
+      await fetchProjects()
+    } catch (error) {
+      console.error('메모 보관 실패:', error)
+    }
   }
 
   if (loading) {
@@ -537,7 +545,6 @@ function App() {
             projects={projects}
             onSelectProject={selectProject}
             onAddMemo={handleQuickAddMemo}
-            onOpenCleanup={() => setShowCleanupModal(true)}
           />
         ) : activeProject ? (
           <ProjectDetail
@@ -581,6 +588,9 @@ function App() {
             setShowMemoModal(false)
             setEditingMemo(null)
           }}
+          onRestart={handleRestartMemo}
+          onComplete={handleCompleteMemo}
+          onArchive={handleArchiveMemo}
         />
       )}
 
@@ -601,17 +611,6 @@ function App() {
           userProfile={userProfile}
           onClose={() => setShowSettingsPanel(false)}
           onLogout={handleLogout}
-        />
-      )}
-
-      {showCleanupModal && (
-        <CleanupModal
-          memos={getExpiredMemos()}
-          onRestart={handleRestartMemo}
-          onComplete={handleCompleteMemo}
-          onDelete={handleDeleteMemo}
-          onArchive={handleArchiveMemo}
-          onClose={() => setShowCleanupModal(false)}
         />
       )}
     </div>

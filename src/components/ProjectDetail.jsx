@@ -247,22 +247,27 @@ function ProjectDetail({
                   const startedAt = new Date(memo.started_at)
                   startedAt.setHours(0, 0, 0, 0)
                   const diffDays = Math.floor((today - startedAt) / (1000 * 60 * 60 * 24))
-                  return Math.min(diffDays, 7)
+                  return diffDays
                 }
                 const dangerLevel = getDangerLevel()
-                const barWidth = Math.min((dangerLevel / 7) * 100, 100)
+                const isExpired = dangerLevel >= 7
+                const displayLevel = Math.min(dangerLevel, 7)
                 
                 return (
                   <div 
                     key={memo.id} 
                     className={`memo-card ${memoCompleted ? 'all-completed' : ''}`}
                   >
-                    <div className="danger-bar-container">
-                      <div 
-                        className="danger-bar" 
-                        style={{ width: `${barWidth}%` }}
-                      />
-                    </div>
+                    {dangerLevel > 0 && (
+                      <div className="memo-status-row">
+                        <span className={`danger-badge level-${displayLevel}`}>
+                          +{dangerLevel}
+                        </span>
+                        {isExpired && (
+                          <span className="cleanup-badge">정리 필요</span>
+                        )}
+                      </div>
+                    )}
                     <div className="memo-card-header">
                       <span className="memo-card-date">[{formatDate(memo.created_at)}]</span>
                       <span 

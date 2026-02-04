@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { FolderOpen, Plus, FileText, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
+import { FolderOpen, Plus, FileText, ChevronLeft, ChevronRight } from 'lucide-react'
 
-function Dashboard({ projects, onSelectProject, onAddMemo, onOpenCleanup }) {
+function Dashboard({ projects, onSelectProject, onAddMemo }) {
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [memoTitle, setMemoTitle] = useState('')
   const [memoDetail, setMemoDetail] = useState('')
@@ -182,53 +182,16 @@ function Dashboard({ projects, onSelectProject, onAddMemo, onOpenCleanup }) {
           </div>
           <div 
             className={`stat-card ${expiredMemos.length > 0 ? 'clickable' : ''}`}
-            onClick={() => expiredMemos.length > 0 && onOpenCleanup && onOpenCleanup()}
+            onClick={() => {
+              if (expiredMemos.length > 0) {
+                onSelectProject(expiredMemos[0].projectId)
+              }
+            }}
           >
             <div className="stat-label">정리 필요</div>
             <div className={`stat-value ${expiredMemos.length > 0 ? 'danger' : ''}`}>
               {expiredMemos.length}
             </div>
-          </div>
-        </div>
-
-        {/* 주간 달력 */}
-        <div className="week-calendar">
-          <div className="week-calendar-header">
-            <span className="week-calendar-title">{getWeekLabel()}</span>
-            <div className="week-calendar-nav">
-              <button 
-                className="week-nav-btn"
-                onClick={() => setWeekOffset(prev => Math.max(prev - 1, -3))}
-                disabled={weekOffset <= -3}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button 
-                className="week-nav-btn"
-                onClick={() => setWeekOffset(prev => Math.min(prev + 1, 0))}
-                disabled={weekOffset >= 0}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-          <div className="week-calendar-days">
-            {weekDays.map((day, index) => {
-              const memosForDay = getMemosForDate(day)
-              return (
-                <div 
-                  key={index}
-                  className={`week-day ${isToday(day) ? 'today' : ''} ${isSelected(day) ? 'selected' : ''}`}
-                  onClick={() => handleDateClick(day)}
-                >
-                  <div className="week-day-name">{dayNames[index]}</div>
-                  <div className="week-day-date">{day.getDate()}</div>
-                  <div className="week-day-count">
-                    {memosForDay.length > 0 ? `${memosForDay.length}개` : '-'}
-                  </div>
-                </div>
-              )
-            })}
           </div>
         </div>
 
@@ -330,6 +293,53 @@ function Dashboard({ projects, onSelectProject, onAddMemo, onOpenCleanup }) {
           </div>
         </div>
 
+        {/* 주간 달력 */}
+        <div className="week-calendar">
+          <div className="week-calendar-header">
+            <span className="week-calendar-title">{getWeekLabel()}</span>
+            <div className="week-calendar-nav">
+              <button 
+                className="week-nav-btn"
+                onClick={() => setWeekOffset(prev => Math.max(prev - 1, -3))}
+                disabled={weekOffset <= -3}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button 
+                className="week-nav-btn"
+                onClick={() => setWeekOffset(prev => Math.min(prev + 1, 0))}
+                disabled={weekOffset >= 0}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+          <div className="week-calendar-days">
+            {weekDays.map((day, index) => {
+              const memosForDay = getMemosForDate(day)
+              const dotCount = Math.min(memosForDay.length, 5)
+              return (
+                <div 
+                  key={index}
+                  className={`week-day ${isToday(day) ? 'today' : ''} ${isSelected(day) ? 'selected' : ''}`}
+                  onClick={() => handleDateClick(day)}
+                >
+                  <div className="week-day-label">{day.getDate()}({dayNames[index]})</div>
+                  <div className="week-day-dots">
+                    {dotCount > 0 ? (
+                      Array.from({ length: dotCount }).map((_, i) => (
+                        <span key={i} className="week-day-dot" />
+                      ))
+                    ) : (
+                      <span className="week-day-empty">-</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         {/* 전체 메모 리스트 */}
         <div className="dashboard-card full-width">
           <div className="dashboard-card-header">
@@ -360,36 +370,25 @@ function Dashboard({ projects, onSelectProject, onAddMemo, onOpenCleanup }) {
               </div>
             ) : (
               <div className="all-memo-grid">
-                {allMemos.map(memo => {
-                  const dangerLevel = getDangerLevel(memo)
-                  const barWidth = Math.min((dangerLevel / 7) * 100, 100)
-                  
-                  return (
-                    <div 
-                      key={memo.id} 
-                      className="all-memo-card"
-                      onClick={() => onSelectProject(memo.projectId)}
-                    >
-                      <div className="danger-bar-container">
-                        <div 
-                          className="danger-bar" 
-                          style={{ width: `${barWidth}%` }}
-                        />
-                      </div>
-                      <div className="all-memo-header">
-                        <span className="all-memo-date">[{formatDate(memo.created_at)}]</span>
-                        <span className="all-memo-title">{memo.title}</span>
-                      </div>
-                      <div className="all-memo-project">
-                        <div 
-                          className="project-color" 
-                          style={{ backgroundColor: memo.projectColor }}
-                        />
-                        <span>{memo.projectName}</span>
-                      </div>
+                {allMemos.map(memo => (
+                  <div 
+                    key={memo.id} 
+                    className="all-memo-card"
+                    onClick={() => onSelectProject(memo.projectId)}
+                  >
+                    <div className="all-memo-header">
+                      <span className="all-memo-date">[{formatDate(memo.created_at)}]</span>
+                      <span className="all-memo-title">{memo.title}</span>
                     </div>
-                  )
-                })}
+                    <div className="all-memo-project">
+                      <div 
+                        className="project-color" 
+                        style={{ backgroundColor: memo.projectColor }}
+                      />
+                      <span>{memo.projectName}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
