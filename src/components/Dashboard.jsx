@@ -1,10 +1,66 @@
 import { useState } from 'react'
-import { FolderOpen, Plus, FileText } from 'lucide-react'
+import { FolderOpen, Plus, FileText, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 
-function Dashboard({ projects, onSelectProject, onAddMemo }) {
+function Dashboard({ projects, onSelectProject, onAddMemo, onOpenCleanup }) {
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [memoTitle, setMemoTitle] = useState('')
   const [memoDetail, setMemoDetail] = useState('')
+  const [weekOffset, setWeekOffset] = useState(0) // 0: 이번주, -1: 지난주, -2: 2주전, -3: 3주전
+  const [selectedDate, setSelectedDate] = useState(null)
+
+  // 오늘 날짜
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // 주간 달력 계산
+  const getWeekDays = (offset) => {
+    const now = new Date()
+    const dayOfWeek = now.getDay()
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+    
+    const monday = new Date(now)
+    monday.setDate(now.getDate() + mondayOffset + (offset * 7))
+    monday.setHours(0, 0, 0, 0)
+    
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(monday)
+      day.setDate(monday.getDate() + i)
+      days.push(day)
+    }
+    return days
+  }
+
+  const weekDays = getWeekDays(weekOffset)
+  const dayNames = ['월', '화', '수', '목', '금', '토', '일']
+
+  // 해당 날짜에 생성된 메모 개수
+  const getMemosForDate = (date) => {
+    return projects.flatMap(p => p.memos).filter(memo => {
+      const memoDate = new Date(memo.created_at)
+      memoDate.setHours(0, 0, 0, 0)
+      return memoDate.getTime() === date.getTime()
+    })
+  }
+
+  // 주차 표시
+  const getWeekLabel = () => {
+    const firstDay = weekDays[0]
+    const month = firstDay.getMonth() + 1
+    const weekNum = Math.ceil(firstDay.getDate() / 7)
+    if (weekOffset === 0) return `${month}월 ${weekNum}주차 (이번주)`
+    if (weekOffset === -1) return `${month}월 ${weekNum}주차 (지난주)`
+    return `${month}월 ${weekNum}주차`
+  }
+
+  // 위험도 계산 (started_at 기준)
+  const getDangerLevel = (memo) => {
+    if (!memo.started_at) return 0
+    const startedAt = new Date(memo.started_at)
+    startedAt.setHours(0, 0, 0, 0)
+    const diffDays = Math.floor((today - startedAt) / (1000 * 60 * 60 * 24))
+    return Math.min(diffDays, 7)
+  }
 
   // 통계 계산 (상세내용 기준)
   const totalProjects = projects.length
@@ -21,6 +77,16 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
   
   const pendingDetails = totalDetails - completedDetails
 
+  // 정리 필요 메모 (7일 이상)
+  const expiredMemos = projects.flatMap(p => 
+    p.memos.filter(m => getDangerLevel(m) >= 7).map(m => ({
+      ...m,
+      projectName: p.name,
+      projectColor: p.color,
+      projectId: p.id
+    }))
+  )
+
   // 프로젝트 진행률 (상세내용 기준)
   const projectProgress = projects.map(p => {
     const total = p.memos.reduce((sum, m) => sum + (m.details?.length || 0), 0)
@@ -31,10 +97,15 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
     return { ...p, progress, completed, total }
   }).sort((a, b) => b.progress - a.progress)
 
-  // 전체 메모 (최신순)
+  // 전체 메모 (최신순) - 날짜 필터 적용
   const allMemos = projects.flatMap(p => 
     p.memos.map(m => ({ ...m, projectName: p.name, projectColor: p.color, projectId: p.id }))
-  ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  ).filter(memo => {
+    if (!selectedDate) return true
+    const memoDate = new Date(memo.created_at)
+    memoDate.setHours(0, 0, 0, 0)
+    return memoDate.getTime() === selectedDate.getTime()
+  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
   const formatDate = (dateStr) => {
     if (!dateStr) return ''
@@ -68,6 +139,22 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
     }
   }
 
+  const handleDateClick = (date) => {
+    if (selectedDate && selectedDate.getTime() === date.getTime()) {
+      setSelectedDate(null) // 다시 클릭하면 필터 해제
+    } else {
+      setSelectedDate(date)
+    }
+  }
+
+  const isToday = (date) => {
+    return date.getTime() === today.getTime()
+  }
+
+  const isSelected = (date) => {
+    return selectedDate && selectedDate.getTime() === date.getTime()
+  }
+
   return (
     <>
       <header className="content-header">
@@ -92,6 +179,56 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
           <div className="stat-card">
             <div className="stat-label">진행중</div>
             <div className="stat-value warning">{pendingDetails}</div>
+          </div>
+          <div 
+            className={`stat-card ${expiredMemos.length > 0 ? 'clickable' : ''}`}
+            onClick={() => expiredMemos.length > 0 && onOpenCleanup && onOpenCleanup()}
+          >
+            <div className="stat-label">정리 필요</div>
+            <div className={`stat-value ${expiredMemos.length > 0 ? 'danger' : ''}`}>
+              {expiredMemos.length}
+            </div>
+          </div>
+        </div>
+
+        {/* 주간 달력 */}
+        <div className="week-calendar">
+          <div className="week-calendar-header">
+            <span className="week-calendar-title">{getWeekLabel()}</span>
+            <div className="week-calendar-nav">
+              <button 
+                className="week-nav-btn"
+                onClick={() => setWeekOffset(prev => Math.max(prev - 1, -3))}
+                disabled={weekOffset <= -3}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button 
+                className="week-nav-btn"
+                onClick={() => setWeekOffset(prev => Math.min(prev + 1, 0))}
+                disabled={weekOffset >= 0}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+          <div className="week-calendar-days">
+            {weekDays.map((day, index) => {
+              const memosForDay = getMemosForDate(day)
+              return (
+                <div 
+                  key={index}
+                  className={`week-day ${isToday(day) ? 'today' : ''} ${isSelected(day) ? 'selected' : ''}`}
+                  onClick={() => handleDateClick(day)}
+                >
+                  <div className="week-day-name">{dayNames[index]}</div>
+                  <div className="week-day-date">{day.getDate()}</div>
+                  <div className="week-day-count">
+                    {memosForDay.length > 0 ? `${memosForDay.length}개` : '-'}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -123,15 +260,6 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
                     />
                     <div className="project-progress-info">
                       <div className="project-progress-name">{project.name}</div>
-                      <div className="project-progress-bar">
-                        <div 
-                          className="project-progress-fill"
-                          style={{ 
-                            width: `${project.progress}%`,
-                            backgroundColor: project.color
-                          }}
-                        />
-                      </div>
                     </div>
                     <div className="project-progress-stats">
                       <span className="project-progress-count">{project.completed}/{project.total}</span>
@@ -205,37 +333,63 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
         {/* 전체 메모 리스트 */}
         <div className="dashboard-card full-width">
           <div className="dashboard-card-header">
-            <FileText size={18} strokeWidth={1.2} />
-            전체 메모
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <FileText size={18} strokeWidth={1.2} />
+              {selectedDate 
+                ? `${selectedDate.getMonth() + 1}/${selectedDate.getDate()} 메모`
+                : '전체 메모'
+              }
+            </div>
+            {selectedDate && (
+              <button 
+                className="btn btn-ghost btn-sm"
+                onClick={() => setSelectedDate(null)}
+              >
+                전체 보기
+              </button>
+            )}
           </div>
           <div className="dashboard-card-body">
             {allMemos.length === 0 ? (
               <div className="empty-state">
                 <FileText strokeWidth={1.2} />
                 <div className="empty-state-title">메모가 없어요</div>
-                <div className="empty-state-desc">위에서 빠른 메모를 추가해보세요</div>
+                <div className="empty-state-desc">
+                  {selectedDate ? '이 날짜에 생성된 메모가 없어요' : '위에서 빠른 메모를 추가해보세요'}
+                </div>
               </div>
             ) : (
               <div className="all-memo-grid">
-                {allMemos.map(memo => (
-                  <div 
-                    key={memo.id} 
-                    className="all-memo-card"
-                    onClick={() => onSelectProject(memo.projectId)}
-                  >
-                    <div className="all-memo-header">
-                      <span className="all-memo-date">[{formatDate(memo.created_at)}]</span>
-                      <span className="all-memo-title">{memo.title}</span>
+                {allMemos.map(memo => {
+                  const dangerLevel = getDangerLevel(memo)
+                  const barWidth = Math.min((dangerLevel / 7) * 100, 100)
+                  
+                  return (
+                    <div 
+                      key={memo.id} 
+                      className="all-memo-card"
+                      onClick={() => onSelectProject(memo.projectId)}
+                    >
+                      <div className="danger-bar-container">
+                        <div 
+                          className="danger-bar" 
+                          style={{ width: `${barWidth}%` }}
+                        />
+                      </div>
+                      <div className="all-memo-header">
+                        <span className="all-memo-date">[{formatDate(memo.created_at)}]</span>
+                        <span className="all-memo-title">{memo.title}</span>
+                      </div>
+                      <div className="all-memo-project">
+                        <div 
+                          className="project-color" 
+                          style={{ backgroundColor: memo.projectColor }}
+                        />
+                        <span>{memo.projectName}</span>
+                      </div>
                     </div>
-                    <div className="all-memo-project">
-                      <div 
-                        className="project-color" 
-                        style={{ backgroundColor: memo.projectColor }}
-                      />
-                      <span>{memo.projectName}</span>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

@@ -239,11 +239,30 @@ function ProjectDetail({
                 const memoCompleted = memo.details?.length > 0 && 
                   memo.details.every(d => d.completed)
                 
+                // 위험도 계산
+                const getDangerLevel = () => {
+                  if (!memo.started_at) return 0
+                  const today = new Date()
+                  today.setHours(0, 0, 0, 0)
+                  const startedAt = new Date(memo.started_at)
+                  startedAt.setHours(0, 0, 0, 0)
+                  const diffDays = Math.floor((today - startedAt) / (1000 * 60 * 60 * 24))
+                  return Math.min(diffDays, 7)
+                }
+                const dangerLevel = getDangerLevel()
+                const barWidth = Math.min((dangerLevel / 7) * 100, 100)
+                
                 return (
                   <div 
                     key={memo.id} 
                     className={`memo-card ${memoCompleted ? 'all-completed' : ''}`}
                   >
+                    <div className="danger-bar-container">
+                      <div 
+                        className="danger-bar" 
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
                     <div className="memo-card-header">
                       <span className="memo-card-date">[{formatDate(memo.created_at)}]</span>
                       <span 

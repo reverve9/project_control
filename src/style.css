@@ -279,7 +279,7 @@ body {
 /* 대시보드 통계 카드 */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -306,6 +306,239 @@ body {
 .stat-value.success { color: var(--success); }
 .stat-value.warning { color: var(--warning); }
 .stat-value.danger { color: var(--danger); }
+
+.stat-card.clickable {
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.stat-card.clickable:hover {
+  border-color: var(--danger);
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.15);
+}
+
+/* 주간 달력 */
+.week-calendar {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.week-calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.week-calendar-title {
+  font-size: var(--font-15);
+  font-weight: var(--weight-600);
+  color: var(--navy);
+}
+
+.week-calendar-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.week-nav-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.week-nav-btn:hover:not(:disabled) {
+  border-color: var(--navy);
+  color: var(--navy);
+}
+
+.week-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.week-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.week-day {
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.week-day:hover {
+  background: var(--bg-primary);
+}
+
+.week-day.today {
+  background: var(--navy);
+}
+
+.week-day.today .week-day-name,
+.week-day.today .week-day-date,
+.week-day.today .week-day-count {
+  color: var(--white);
+}
+
+.week-day.selected {
+  background: var(--active-bg);
+  border: 1px solid var(--navy);
+}
+
+.week-day-name {
+  font-size: var(--font-12);
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.week-day-date {
+  font-size: var(--font-14);
+  font-weight: var(--weight-600);
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.week-day-count {
+  font-size: var(--font-12);
+  color: var(--text-muted);
+}
+
+.week-day-dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.week-day-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--blue);
+}
+
+/* 위험도 그라데이션 바 */
+.danger-bar-container {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.danger-bar {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(to right, #27ae60 0%, #f1c40f 50%, #e74c3c 100%);
+  transition: width 0.3s ease;
+}
+
+/* 정리 필요 모달 */
+.cleanup-modal {
+  max-width: 400px;
+}
+
+.cleanup-memo-info {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.cleanup-memo-title {
+  font-size: var(--font-16);
+  font-weight: var(--weight-600);
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.cleanup-memo-meta {
+  font-size: var(--font-13);
+  color: var(--text-secondary);
+}
+
+.cleanup-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.cleanup-btn {
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cleanup-btn:hover {
+  border-color: var(--navy);
+  background: var(--bg-primary);
+}
+
+.cleanup-btn svg {
+  width: 20px;
+  height: 20px;
+  color: var(--text-secondary);
+}
+
+.cleanup-btn span {
+  font-size: var(--font-13);
+  color: var(--text-primary);
+}
+
+.cleanup-btn.restart:hover {
+  border-color: var(--blue);
+}
+
+.cleanup-btn.restart:hover svg {
+  color: var(--blue);
+}
+
+.cleanup-btn.complete:hover {
+  border-color: var(--success);
+}
+
+.cleanup-btn.complete:hover svg {
+  color: var(--success);
+}
+
+.cleanup-btn.delete:hover {
+  border-color: var(--danger);
+}
+
+.cleanup-btn.delete:hover svg {
+  color: var(--danger);
+}
+
+.cleanup-btn.archive:hover {
+  border-color: var(--warning);
+}
+
+.cleanup-btn.archive:hover svg {
+  color: var(--warning);
+}
 
 /* 대시보드 카드 그리드 */
 .dashboard-grid {
@@ -1270,6 +1503,28 @@ body {
 .modal-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-close-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.modal-close-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .modal-title {
@@ -1418,28 +1673,25 @@ body {
 .project-progress-name {
   font-size: var(--font-14);
   color: var(--text-primary);
-  margin-bottom: 10px;
 }
 
-.project-progress-bar {
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  overflow: hidden;
+.project-progress-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.project-progress-fill {
-  height: 100%;
-  border-radius: 2px;
+.project-progress-count {
+  font-size: var(--font-13);
+  color: var(--text-secondary);
 }
 
 .project-progress-value {
   font-size: var(--font-13);
-  font-weight: var(--weight-500);
-  color: var(--text-secondary);
+  font-weight: var(--weight-600);
+  color: var(--navy);
   min-width: 36px;
   text-align: right;
-  margin-left: 12px;
 }
 
 /* 스크롤바 - Mac/Windows 통일 */

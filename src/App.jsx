@@ -8,6 +8,7 @@ import ProjectModal from './components/ProjectModal'
 import MemoModal from './components/MemoModal'
 import InfoModal from './components/InfoModal'
 import SettingsPanel from './components/SettingsPanel'
+import CleanupModal from './components/CleanupModal'
 
 const COLORS = ['#2c3e50', '#3498db', '#27ae60', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c', '#f39c12']
 
@@ -23,6 +24,7 @@ function App() {
   const [showMemoModal, setShowMemoModal] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
+  const [showCleanupModal, setShowCleanupModal] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [editingMemo, setEditingMemo] = useState(null)
   const [editingInfo, setEditingInfo] = useState(null)
@@ -445,6 +447,65 @@ function App() {
     setActiveView('project')
   }
 
+  // 정리 필요 메모 핸들러
+  const getExpiredMemos = () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    return projects.flatMap(p => 
+      p.memos.filter(m => {
+        if (!m.started_at) return false
+        const startedAt = new Date(m.started_at)
+        startedAt.setHours(0, 0, 0, 0)
+        const diffDays = Math.floor((today - startedAt) / (1000 * 60 * 60 * 24))
+        return diffDays >= 7
+      }).map(m => ({
+        ...m,
+        projectName: p.name,
+        projectColor: p.color,
+        projectId: p.id
+      }))
+    )
+  }
+
+  const handleRestartMemo = async (memoId) => {
+    try {
+      const { error } = await supabase
+        .from('memos')
+        .update({ started_at: new Date().toISOString() })
+        .eq('id', memoId)
+
+      if (error) throw error
+      await fetchProjects()
+    } catch (error) {
+      console.error('메모 리셋 실패:', error)
+    }
+  }
+
+  const handleCompleteMemo = async (memoId) => {
+    try {
+      // 해당 메모의 모든 상세내용을 완료 처리
+      const { error } = await supabase
+        .from('memo_details')
+        .update({ 
+          completed: true,
+          completed_at: new Date().toISOString()
+        })
+        .eq('memo_id', memoId)
+
+      if (error) throw error
+      await fetchProjects()
+    } catch (error) {
+      console.error('메모 완료 처리 실패:', error)
+    }
+  }
+
+  const handleArchiveMemo = async (memoId) => {
+    // TODO: 보관 기능 구현 (archived 컬럼 추가 필요)
+    // 일단은 삭제와 동일하게 처리하거나 스킵
+    console.log('보관 기능은 추후 구현')
+  }
+
   if (loading) {
     return (
       <div className="app" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -476,6 +537,7 @@ function App() {
             projects={projects}
             onSelectProject={selectProject}
             onAddMemo={handleQuickAddMemo}
+            onOpenCleanup={() => setShowCleanupModal(true)}
           />
         ) : activeProject ? (
           <ProjectDetail
@@ -539,6 +601,17 @@ function App() {
           userProfile={userProfile}
           onClose={() => setShowSettingsPanel(false)}
           onLogout={handleLogout}
+        />
+      )}
+
+      {showCleanupModal && (
+        <CleanupModal
+          memos={getExpiredMemos()}
+          onRestart={handleRestartMemo}
+          onComplete={handleCompleteMemo}
+          onDelete={handleDeleteMemo}
+          onArchive={handleArchiveMemo}
+          onClose={() => setShowCleanupModal(false)}
         />
       )}
     </div>
