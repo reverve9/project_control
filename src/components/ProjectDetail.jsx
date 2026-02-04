@@ -5,16 +5,19 @@ function ProjectDetail({
   project, 
   onToggleDetail,
   onDeleteMemo, 
-  onEditMemo, 
+  onEditMemo,
+  onViewMemo,
   onAddMemo,
   onEditInfo,
   onDeleteInfo,
   onAddInfo,
   onEditProject, 
   onDeleteProject,
-  onArchiveProject
+  onArchiveProject,
+  onArchiveMemo
 }) {
   const [copiedId, setCopiedId] = useState(null)
+  const [sortOrder, setSortOrder] = useState('newest') // newest, oldest, priority
 
   // 삭제 확인
   const handleDeleteProject = () => {
@@ -26,12 +29,6 @@ function ProjectDetail({
   const handleArchiveProject = () => {
     if (window.confirm(`"${project.name}" 프로젝트를 보관할까요?`)) {
       onArchiveProject()
-    }
-  }
-
-  const handleDeleteMemo = (memo) => {
-    if (window.confirm(`"${memo.title}" 메모를 삭제할까요?`)) {
-      onDeleteMemo(memo.id)
     }
   }
 
@@ -69,10 +66,34 @@ function ProjectDetail({
     window.open(url, '_blank')
   }
 
-  // 정렬: 작성일 최신순
-  const sortedMemos = [...project.memos].sort((a, b) => 
-    new Date(b.created_at) - new Date(a.created_at)
-  )
+  // 정렬
+  const sortedMemos = [...project.memos].sort((a, b) => {
+    switch (sortOrder) {
+      case 'oldest':
+        return new Date(a.created_at) - new Date(b.created_at)
+      case 'priority':
+        return (b.priority || 0) - (a.priority || 0)
+      case 'newest':
+      default:
+        return new Date(b.created_at) - new Date(a.created_at)
+    }
+  })
+
+  const renderPriority = (priority) => {
+    const filled = priority || 0
+    return (
+      <div className="priority-display-sm">
+        {[1, 2, 3, 4, 5].map(i => (
+          <span 
+            key={i} 
+            className="priority-star-sm"
+          >
+            {i <= filled ? '★' : '☆'}
+          </span>
+        ))}
+      </div>
+    )
+  }
 
   const getInfoIcon = (type) => {
     switch (type) {
@@ -123,8 +144,8 @@ function ProjectDetail({
               <svg width="120" height="120" viewBox="0 0 120 120">
                 <defs>
                   <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor={project.color} />
-                    <stop offset="100%" stopColor="var(--blue)" />
+                    <stop offset="0%" stopColor={project.color} stopOpacity="0.3" />
+                    <stop offset="100%" stopColor={project.color} />
                   </linearGradient>
                 </defs>
                 <circle
@@ -243,10 +264,21 @@ function ProjectDetail({
         <div className="memo-section">
           <div className="memo-header">
             <h2 className="memo-title">메모</h2>
-            <button className="btn btn-primary btn-sm" onClick={onAddMemo}>
-              <Plus size={14} strokeWidth={1.2} />
-              추가
-            </button>
+            <div className="memo-header-actions">
+              <select 
+                className="memo-sort-select"
+                value={sortOrder}
+                onChange={e => setSortOrder(e.target.value)}
+              >
+                <option value="newest">최신순</option>
+                <option value="oldest">오래된순</option>
+                <option value="priority">중요도순</option>
+              </select>
+              <button className="btn btn-primary btn-sm" onClick={onAddMemo}>
+                <Plus size={14} strokeWidth={1.2} />
+                추가
+              </button>
+            </div>
           </div>
 
           {sortedMemos.length === 0 ? (
@@ -267,29 +299,14 @@ function ProjectDetail({
                   <div 
                     key={memo.id} 
                     className={`memo-card ${memoCompleted ? 'all-completed' : ''}`}
+                    onClick={() => onViewMemo(memo)}
                   >
                     <div className="memo-card-header">
                       <span className="memo-card-date">{formatDate(memo.created_at)}</span>
-                      <span 
-                        className="memo-card-title"
-                        onClick={() => onEditMemo(memo)}
-                      >
+                      <span className="memo-card-title">
                         {memo.title}
                       </span>
-                      <div className="memo-card-actions">
-                        <button 
-                          className="memo-action-btn"
-                          onClick={() => onEditMemo(memo)}
-                        >
-                          <Edit2 size={14} strokeWidth={1.2} />
-                        </button>
-                        <button 
-                          className="memo-action-btn delete"
-                          onClick={() => handleDeleteMemo(memo)}
-                        >
-                          <Trash2 size={14} strokeWidth={1.2} />
-                        </button>
-                      </div>
+                      {renderPriority(memo.priority)}
                     </div>
                     
                     {memo.details && memo.details.length > 0 && (
@@ -298,6 +315,7 @@ function ProjectDetail({
                           <li 
                             key={detail.id} 
                             className={`detail-item-row ${detail.completed ? 'completed' : ''}`}
+                            onClick={e => e.stopPropagation()}
                           >
                             <div 
                               className={`detail-checkbox ${detail.completed ? 'checked' : ''}`}

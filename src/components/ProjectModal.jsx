@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react'
 
-function ProjectModal({ project, colors, onSave, onClose }) {
+function ProjectModal({ project, categories, colors, onSave, onClose }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [color, setColor] = useState(colors[0])
+  const [categoryId, setCategoryId] = useState('')
 
   useEffect(() => {
     if (project) {
       setName(project.name)
       setDescription(project.description || '')
       setColor(project.color)
+      setCategoryId(project.category_id || '')
+    } else {
+      setName('')
+      setDescription('')
+      setColor(colors[0])
+      setCategoryId('')
     }
-  }, [project])
+  }, [project, colors])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -20,12 +27,19 @@ function ProjectModal({ project, colors, onSave, onClose }) {
     onSave({
       name: name.trim(),
       description: description.trim(),
-      color
+      color,
+      category_id: categoryId || null
     })
   }
 
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onMouseDown={handleOverlayClick}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">
@@ -45,6 +59,20 @@ function ProjectModal({ project, colors, onSave, onClose }) {
                 placeholder="프로젝트 이름을 입력하세요"
                 autoFocus
               />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">카테고리</label>
+              <select
+                className="form-input"
+                value={categoryId}
+                onChange={e => setCategoryId(e.target.value)}
+              >
+                <option value="">미분류</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">

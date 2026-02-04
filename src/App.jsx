@@ -6,7 +6,9 @@ import Dashboard from './components/Dashboard'
 import ProjectDetail from './components/ProjectDetail'
 import ProjectModal from './components/ProjectModal'
 import MemoModal from './components/MemoModal'
+import MemoViewModal from './components/MemoViewModal'
 import InfoModal from './components/InfoModal'
+import CategoryModal from './components/CategoryModal'
 import SettingsPanel from './components/SettingsPanel'
 import ArchiveView from './components/ArchiveView'
 
@@ -17,18 +19,38 @@ function App() {
   const [userProfile, setUserProfile] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [projects, setProjects] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeView, setActiveView] = useState('dashboard')
   const [activeProjectId, setActiveProjectId] = useState(null)
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [showMemoModal, setShowMemoModal] = useState(false)
+  const [showMemoViewModal, setShowMemoViewModal] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [editingMemo, setEditingMemo] = useState(null)
+  const [viewingMemo, setViewingMemo] = useState(null)
   const [editingInfo, setEditingInfo] = useState(null)
+  const [editingCategory, setEditingCategory] = useState(null)
   const [archivedProjects, setArchivedProjects] = useState([])
   const [archivedMemos, setArchivedMemos] = useState([])
+
+  // 카테고리 데이터 가져오기
+  const fetchCategories = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('project_categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (error) throw error
+      setCategories(data || [])
+    } catch (error) {
+      console.error('카테고리 로드 실패:', error)
+    }
+  }, [])
 
   // 프로젝트 데이터 가져오기
   const fetchProjects = useCallback(async () => {
@@ -36,7 +58,7 @@ function App() {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
-        .order('updated_at', { ascending: false })
+        .order('sort_order', { ascending: true })
 
       if (projectsError) throw projectsError
 
@@ -114,9 +136,10 @@ function App() {
 
     if (user) {
       fetchUserProfile()
+      fetchCategories()
       fetchProjects()
     }
-  }, [user, fetchProjects])
+  }, [user, fetchProjects, fetchCategories])
 
   // 보관함 뷰 진입 시 보관 항목 로드
   useEffect(() => {
@@ -227,7 +250,8 @@ function App() {
           .update({
             name: projectData.name,
             description: projectData.description,
-            color: projectData.color
+            color: projectData.color,
+            category_id: projectData.category_id
           })
           .eq('id', editingProject.id)
 
@@ -244,6 +268,7 @@ function App() {
             name: projectData.name,
             description: projectData.description,
             color: projectData.color,
+            category_id: projectData.category_id,
             user_id: user.id
           })
           .select()
@@ -337,7 +362,10 @@ function App() {
       if (editingMemo) {
         const { error: memoError } = await supabase
           .from('memos')
-          .update({ title: memoData.title })
+          .update({ 
+            title: memoData.title,
+            priority: memoData.priority || 0
+          })
           .eq('id', editingMemo.id)
 
         if (memoError) throw memoError
@@ -374,6 +402,7 @@ function App() {
           .insert({
             project_id: activeProjectId,
             title: memoData.title,
+            priority: memoData.priority || 0,
             user_id: user.id,
             started_at: new Date().toISOString()
           })
@@ -621,6 +650,85 @@ function App() {
     }
   }
 
+  // 카테고리 저장
+  const handleSaveCategory = async (categoryData) => {
+    try {
+      if (editingCategory) {
+        const { error } = await supabase
+          .from('project_categories')
+          .update({ name: categoryData.name })
+          .eq('id', editingCategory.id)
+
+        if (error) throw error
+      } else {
+        const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order || 0), 0)
+        const { error } = await supabase
+          .from('project_categories')
+          .insert({
+            name: categoryData.name,
+            user_id: user.id,
+            sort_order: maxOrder + 1
+          })
+
+        if (error) throw error
+      }
+      
+      await fetchCategories()
+      setShowCategoryModal(false)
+      setEditingCategory(null)
+    } catch (error) {
+      console.error('카테고리 저장 실패:', error)
+    }
+  }
+
+  // 카테고리 삭제
+  const handleDeleteCategory = async (categoryId) => {
+    try {
+      const { error } = await supabase
+        .from('project_categories')
+        .delete()
+        .eq('id', categoryId)
+
+      if (error) throw error
+      
+      await fetchCategories()
+      await fetchProjects()
+    } catch (error) {
+      console.error('카테고리 삭제 실패:', error)
+    }
+  }
+
+  // 프로젝트 순서/카테고리 변경
+  const handleReorderProject = async (projectId, targetProjectId, newCategoryId) => {
+    try {
+      // 카테고리만 변경
+      if (targetProjectId === null) {
+        const { error } = await supabase
+          .from('projects')
+          .update({ category_id: newCategoryId })
+          .eq('id', projectId)
+
+        if (error) throw error
+      } else {
+        // 순서 변경 로직
+        const targetProject = projects.find(p => p.id === targetProjectId)
+        const { error } = await supabase
+          .from('projects')
+          .update({ 
+            category_id: newCategoryId,
+            sort_order: targetProject?.sort_order || 0
+          })
+          .eq('id', projectId)
+
+        if (error) throw error
+      }
+
+      await fetchProjects()
+    } catch (error) {
+      console.error('프로젝트 순서 변경 실패:', error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="app" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -633,6 +741,7 @@ function App() {
     <div className="app">
       <Sidebar
         projects={projects}
+        categories={categories}
         activeView={activeView}
         activeProjectId={activeProjectId}
         onSelectDashboard={() => setActiveView('dashboard')}
@@ -642,6 +751,15 @@ function App() {
           setEditingProject(null)
           setShowProjectModal(true)
         }}
+        onAddCategory={() => {
+          setEditingCategory(null)
+          setShowCategoryModal(true)
+        }}
+        onEditCategory={(category) => {
+          setEditingCategory(category)
+          setShowCategoryModal(true)
+        }}
+        onReorderProject={handleReorderProject}
         user={user}
         userProfile={userProfile}
         onOpenSettings={() => setShowSettingsPanel(true)}
@@ -669,6 +787,10 @@ function App() {
             onToggleDetail={handleToggleDetail}
             onDeleteMemo={(memoId) => handleDeleteMemo(activeProject.id, memoId)}
             onEditMemo={handleEditMemo}
+            onViewMemo={(memo) => {
+              setViewingMemo(memo)
+              setShowMemoViewModal(true)
+            }}
             onAddMemo={() => {
               setEditingMemo(null)
               setShowMemoModal(true)
@@ -682,6 +804,7 @@ function App() {
             onEditProject={() => handleEditProject(activeProject)}
             onDeleteProject={() => handleDeleteProject(activeProject.id)}
             onArchiveProject={() => handleArchiveProject(activeProject.id)}
+            onArchiveMemo={handleArchiveMemo}
           />
         ) : null}
       </main>
@@ -689,11 +812,24 @@ function App() {
       {showProjectModal && (
         <ProjectModal
           project={editingProject}
+          categories={categories}
           colors={COLORS}
           onSave={handleAddProject}
           onClose={() => {
             setShowProjectModal(false)
             setEditingProject(null)
+          }}
+        />
+      )}
+
+      {showCategoryModal && (
+        <CategoryModal
+          category={editingCategory}
+          onSave={handleSaveCategory}
+          onDelete={handleDeleteCategory}
+          onClose={() => {
+            setShowCategoryModal(false)
+            setEditingCategory(null)
           }}
         />
       )}
@@ -707,6 +843,23 @@ function App() {
             setEditingMemo(null)
           }}
           onArchive={handleArchiveMemo}
+        />
+      )}
+
+      {showMemoViewModal && viewingMemo && (
+        <MemoViewModal
+          memo={viewingMemo}
+          onClose={() => {
+            setShowMemoViewModal(false)
+            setViewingMemo(null)
+          }}
+          onEdit={(memo) => {
+            setEditingMemo(memo)
+            setShowMemoModal(true)
+          }}
+          onDelete={(memoId) => handleDeleteMemo(activeProjectId, memoId)}
+          onArchive={handleArchiveMemo}
+          onToggleDetail={handleToggleDetail}
         />
       )}
 

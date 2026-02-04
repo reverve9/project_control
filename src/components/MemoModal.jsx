@@ -3,12 +3,14 @@ import { Plus, X, Check, Archive } from 'lucide-react'
 
 function MemoModal({ memo, onSave, onClose, onArchive }) {
   const [title, setTitle] = useState('')
+  const [priority, setPriority] = useState(0)
   const [details, setDetails] = useState([])
   const [newDetail, setNewDetail] = useState('')
 
   useEffect(() => {
     if (memo) {
       setTitle(memo.title)
+      setPriority(memo.priority || 0)
       setDetails(memo.details?.map(d => ({
         content: d.content,
         completed: d.completed || false,
@@ -16,6 +18,7 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
       })) || [])
     } else {
       setTitle('')
+      setPriority(0)
       setDetails([])
     }
   }, [memo])
@@ -68,6 +71,7 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
     
     onSave({
       title: title.trim(),
+      priority,
       details: filteredDetails
     })
   }
@@ -81,8 +85,14 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
     }
   }
 
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onMouseDown={handleOverlayClick}>
       <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">
@@ -102,6 +112,21 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
                 placeholder="메모 제목을 입력하세요"
                 autoFocus
               />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">중요도</label>
+              <div className="priority-selector">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <span
+                    key={i}
+                    className="priority-star clickable"
+                    onClick={() => setPriority(i === priority ? 0 : i)}
+                  >
+                    {i <= priority ? '★' : '☆'}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className="form-group">
