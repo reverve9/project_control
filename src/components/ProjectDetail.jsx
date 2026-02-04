@@ -315,20 +315,17 @@ function ProjectDetail({
                           <li 
                             key={detail.id} 
                             className={`detail-item-row ${detail.completed ? 'completed' : ''}`}
-                            onClick={e => e.stopPropagation()}
                           >
                             <div 
                               className={`detail-checkbox ${detail.completed ? 'checked' : ''}`}
-                              onClick={() => onToggleDetail(detail.id, detail.completed)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onToggleDetail(detail.id, detail.completed)
+                              }}
                             >
                               {detail.completed && <Check size={10} strokeWidth={1.2} />}
                             </div>
                             <span className="detail-content">{detail.content}</span>
-                            {detail.completed_at && (
-                              <span className="detail-completed-date">
-                                {formatDate(detail.completed_at)}
-                              </span>
-                            )}
                           </li>
                         ))}
                       </ul>

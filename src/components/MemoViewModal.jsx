@@ -9,6 +9,19 @@ function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDet
     return `${month}/${day}`
   }
 
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return ''
+    const now = new Date()
+    const date = new Date(dateStr)
+    const diffMs = now - date
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffHours < 1) return '방금'
+    if (diffHours < 24) return `${diffHours}시간 전`
+    return `${diffDays}일 전`
+  }
+
   const handleDelete = () => {
     if (window.confirm(`"${memo.title}" 메모를 삭제할까요?`)) {
       onDelete(memo.id)
@@ -80,11 +93,9 @@ function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDet
                       {detail.completed && <Check size={10} strokeWidth={1.2} />}
                     </div>
                     <span className="detail-content">{detail.content}</span>
-                    {detail.completed_at && (
-                      <span className="detail-completed-date">
-                        {formatDate(detail.completed_at)}
-                      </span>
-                    )}
+                    <span className="detail-time-ago">
+                      {formatTimeAgo(detail.created_at)}
+                    </span>
                   </li>
                 ))}
               </ul>
