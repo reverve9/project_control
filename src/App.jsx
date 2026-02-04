@@ -8,6 +8,7 @@ import ProjectModal from './components/ProjectModal'
 import MemoModal from './components/MemoModal'
 import InfoModal from './components/InfoModal'
 import SettingsPanel from './components/SettingsPanel'
+import ArchiveView from './components/ArchiveView'
 
 const COLORS = ['#2c3e50', '#3498db', '#27ae60', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c', '#f39c12']
 
@@ -26,6 +27,8 @@ function App() {
   const [editingProject, setEditingProject] = useState(null)
   const [editingMemo, setEditingMemo] = useState(null)
   const [editingInfo, setEditingInfo] = useState(null)
+  const [archivedProjects, setArchivedProjects] = useState([])
+  const [archivedMemos, setArchivedMemos] = useState([])
 
   // 프로젝트 데이터 가져오기
   const fetchProjects = useCallback(async () => {
@@ -63,11 +66,14 @@ function App() {
         details: detailsData.filter(d => d.memo_id === memo.id)
       }))
 
-      const projectsWithData = projectsData.map(project => ({
-        ...project,
-        infos: infosData.filter(info => info.project_id === project.id),
-        memos: memosWithDetails.filter(memo => memo.project_id === project.id)
-      }))
+      // archived가 아닌 프로젝트만, archived가 아닌 메모만 포함
+      const projectsWithData = projectsData
+        .filter(project => !project.archived)
+        .map(project => ({
+          ...project,
+          infos: infosData.filter(info => info.project_id === project.id),
+          memos: memosWithDetails.filter(memo => memo.project_id === project.id && !memo.archived)
+        }))
 
       setProjects(projectsWithData)
     } catch (error) {
@@ -111,6 +117,61 @@ function App() {
       fetchProjects()
     }
   }, [user, fetchProjects])
+
+  // 보관함 뷰 진입 시 보관 항목 로드
+  useEffect(() => {
+    const loadArchivedItems = async () => {
+      try {
+        // 보관된 프로젝트 로드
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('archived', true)
+          .order('updated_at', { ascending: false })
+
+        if (projectsError) throw projectsError
+        setArchivedProjects(projectsData || [])
+
+        // 보관된 메모 로드
+        const { data: memosData, error: memosError } = await supabase
+          .from('memos')
+          .select('*')
+          .eq('archived', true)
+          .order('created_at', { ascending: false })
+
+        if (memosError) throw memosError
+
+        const { data: detailsData, error: detailsError } = await supabase
+          .from('memo_details')
+          .select('*')
+
+        if (detailsError) throw detailsError
+
+        // 모든 프로젝트 정보 가져오기 (보관된 것 포함)
+        const { data: allProjects } = await supabase
+          .from('projects')
+          .select('id, name, color')
+
+        const result = memosData.map(memo => {
+          const project = allProjects?.find(p => p.id === memo.project_id) || {}
+          return {
+            ...memo,
+            details: detailsData.filter(d => d.memo_id === memo.id),
+            projectName: project.name || '삭제된 프로젝트',
+            projectColor: project.color || '#ccc',
+            projectId: memo.project_id
+          }
+        })
+        setArchivedMemos(result)
+      } catch (error) {
+        console.error('보관 항목 로드 실패:', error)
+      }
+    }
+
+    if (activeView === 'archive') {
+      loadArchivedItems()
+    }
+  }, [activeView])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -514,6 +575,52 @@ function App() {
     }
   }
 
+  const handleRestoreMemo = async (memoId) => {
+    try {
+      const { error } = await supabase
+        .from('memos')
+        .update({ archived: false })
+        .eq('id', memoId)
+
+      if (error) throw error
+      await fetchProjects()
+      setActiveView('archive') // 보관함 새로고침
+    } catch (error) {
+      console.error('메모 복원 실패:', error)
+    }
+  }
+
+  const handleArchiveProject = async (projectId) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ archived: true })
+        .eq('id', projectId)
+
+      if (error) throw error
+      setActiveView('dashboard')
+      setActiveProjectId(null)
+      await fetchProjects()
+    } catch (error) {
+      console.error('프로젝트 보관 실패:', error)
+    }
+  }
+
+  const handleRestoreProject = async (projectId) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ archived: false })
+        .eq('id', projectId)
+
+      if (error) throw error
+      await fetchProjects()
+      setActiveView('archive') // 보관함 새로고침
+    } catch (error) {
+      console.error('프로젝트 복원 실패:', error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="app" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -530,6 +637,7 @@ function App() {
         activeProjectId={activeProjectId}
         onSelectDashboard={() => setActiveView('dashboard')}
         onSelectProject={selectProject}
+        onSelectArchive={() => setActiveView('archive')}
         onAddProject={() => {
           setEditingProject(null)
           setShowProjectModal(true)
@@ -545,6 +653,15 @@ function App() {
             projects={projects}
             onSelectProject={selectProject}
             onAddMemo={handleQuickAddMemo}
+          />
+        ) : activeView === 'archive' ? (
+          <ArchiveView
+            archivedProjects={archivedProjects}
+            archivedMemos={archivedMemos}
+            onRestoreProject={handleRestoreProject}
+            onDeleteProject={handleDeleteProject}
+            onRestoreMemo={handleRestoreMemo}
+            onDeleteMemo={handleDeleteMemo}
           />
         ) : activeProject ? (
           <ProjectDetail
@@ -564,6 +681,7 @@ function App() {
             }}
             onEditProject={() => handleEditProject(activeProject)}
             onDeleteProject={() => handleDeleteProject(activeProject.id)}
+            onArchiveProject={() => handleArchiveProject(activeProject.id)}
           />
         ) : null}
       </main>
@@ -588,8 +706,6 @@ function App() {
             setShowMemoModal(false)
             setEditingMemo(null)
           }}
-          onRestart={handleRestartMemo}
-          onComplete={handleCompleteMemo}
           onArchive={handleArchiveMemo}
         />
       )}

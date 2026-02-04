@@ -1,22 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Plus, X, Check, RefreshCw, CheckCircle, Archive } from 'lucide-react'
+import { Plus, X, Check, Archive } from 'lucide-react'
 
-function MemoModal({ memo, onSave, onClose, onRestart, onComplete, onArchive }) {
+function MemoModal({ memo, onSave, onClose, onArchive }) {
   const [title, setTitle] = useState('')
   const [details, setDetails] = useState([])
   const [newDetail, setNewDetail] = useState('')
-
-  // 위험도 계산
-  const getDangerLevel = () => {
-    if (!memo?.started_at) return 0
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const startedAt = new Date(memo.started_at)
-    startedAt.setHours(0, 0, 0, 0)
-    return Math.floor((today - startedAt) / (1000 * 60 * 60 * 24))
-  }
-  const dangerLevel = getDangerLevel()
-  const isExpired = dangerLevel >= 7
 
   useEffect(() => {
     if (memo) {
@@ -84,24 +72,12 @@ function MemoModal({ memo, onSave, onClose, onRestart, onComplete, onArchive }) 
     })
   }
 
-  const handleRestart = () => {
-    if (onRestart && memo) {
-      onRestart(memo.id)
-      onClose()
-    }
-  }
-
-  const handleComplete = () => {
-    if (onComplete && memo) {
-      onComplete(memo.id)
-      onClose()
-    }
-  }
-
   const handleArchive = () => {
     if (onArchive && memo) {
-      onArchive(memo.id)
-      onClose()
+      if (window.confirm(`"${memo.title}" 메모를 보관할까요?`)) {
+        onArchive(memo.id)
+        onClose()
+      }
     }
   }
 
@@ -176,45 +152,21 @@ function MemoModal({ memo, onSave, onClose, onRestart, onComplete, onArchive }) 
                 </ul>
               )}
             </div>
-
-            {/* 메모 액션 버튼 (수정 모드일 때만) */}
-            {memo && (
-              <div className="memo-modal-actions">
-                <button
-                  type="button"
-                  className="memo-action-btn-sm restart"
-                  onClick={handleRestart}
-                  disabled={!isExpired}
-                  title="다시 시작"
-                >
-                  <RefreshCw size={14} />
-                  다시 시작
-                </button>
-                <button
-                  type="button"
-                  className="memo-action-btn-sm complete"
-                  onClick={handleComplete}
-                  disabled={!isExpired}
-                  title="완료 처리"
-                >
-                  <CheckCircle size={14} />
-                  완료
-                </button>
-                <button
-                  type="button"
-                  className="memo-action-btn-sm archive"
-                  onClick={handleArchive}
-                  disabled={!isExpired}
-                  title="보관"
-                >
-                  <Archive size={14} />
-                  보관
-                </button>
-              </div>
-            )}
           </div>
 
           <div className="modal-footer">
+            {memo && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={handleArchive}
+                title="보관"
+              >
+                <Archive size={16} />
+                보관
+              </button>
+            )}
+            <div style={{ flex: 1 }} />
             <button type="button" className="btn btn-ghost" onClick={onClose}>
               취소
             </button>

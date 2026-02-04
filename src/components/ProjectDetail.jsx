@@ -1,4 +1,4 @@
-import { Plus, Edit2, Trash2, Check, FileText, Copy, ExternalLink, StickyNote } from 'lucide-react'
+import { Plus, Edit2, Trash2, Check, FileText, Copy, ExternalLink, StickyNote, Archive } from 'lucide-react'
 import { useState } from 'react'
 
 function ProjectDetail({ 
@@ -11,9 +11,29 @@ function ProjectDetail({
   onDeleteInfo,
   onAddInfo,
   onEditProject, 
-  onDeleteProject 
+  onDeleteProject,
+  onArchiveProject
 }) {
   const [copiedId, setCopiedId] = useState(null)
+
+  // 삭제 확인
+  const handleDeleteProject = () => {
+    if (window.confirm(`"${project.name}" 프로젝트를 삭제할까요?\n모든 메모와 정보가 함께 삭제됩니다.`)) {
+      onDeleteProject()
+    }
+  }
+
+  const handleArchiveProject = () => {
+    if (window.confirm(`"${project.name}" 프로젝트를 보관할까요?`)) {
+      onArchiveProject()
+    }
+  }
+
+  const handleDeleteMemo = (memo) => {
+    if (window.confirm(`"${memo.title}" 메모를 삭제할까요?`)) {
+      onDeleteMemo(memo.id)
+    }
+  }
 
   // 상세내용 기준 진행률
   const totalCount = project.memos.reduce((sum, m) => sum + (m.details?.length || 0), 0)
@@ -79,7 +99,11 @@ function ProjectDetail({
               <Edit2 size={14} strokeWidth={1.2} />
               수정
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={onDeleteProject}>
+            <button className="btn btn-ghost btn-sm" onClick={handleArchiveProject}>
+              <Archive size={14} strokeWidth={1.2} />
+              보관
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={handleDeleteProject}>
               <Trash2 size={14} strokeWidth={1.2} />
               삭제
             </button>
@@ -239,37 +263,12 @@ function ProjectDetail({
                 const memoCompleted = memo.details?.length > 0 && 
                   memo.details.every(d => d.completed)
                 
-                // 위험도 계산
-                const getDangerLevel = () => {
-                  if (!memo.started_at) return 0
-                  const today = new Date()
-                  today.setHours(0, 0, 0, 0)
-                  const startedAt = new Date(memo.started_at)
-                  startedAt.setHours(0, 0, 0, 0)
-                  const diffDays = Math.floor((today - startedAt) / (1000 * 60 * 60 * 24))
-                  return diffDays
-                }
-                const dangerLevel = getDangerLevel()
-                const isExpired = dangerLevel >= 7
-                const displayLevel = Math.min(dangerLevel, 7)
-                
                 return (
                   <div 
                     key={memo.id} 
                     className={`memo-card ${memoCompleted ? 'all-completed' : ''}`}
                   >
-                    {dangerLevel > 0 && (
-                      <div className="memo-status-row">
-                        <span className={`danger-badge level-${displayLevel}`}>
-                          +{dangerLevel}
-                        </span>
-                        {isExpired && (
-                          <span className="cleanup-badge">정리 필요</span>
-                        )}
-                      </div>
-                    )}
                     <div className="memo-card-header">
-                      <span className="memo-card-date">[{formatDate(memo.created_at)}]</span>
                       <span 
                         className="memo-card-title"
                         onClick={() => onEditMemo(memo)}
@@ -285,7 +284,7 @@ function ProjectDetail({
                         </button>
                         <button 
                           className="memo-action-btn delete"
-                          onClick={() => onDeleteMemo(memo.id)}
+                          onClick={() => handleDeleteMemo(memo)}
                         >
                           <Trash2 size={14} strokeWidth={1.2} />
                         </button>

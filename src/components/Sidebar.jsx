@@ -1,6 +1,6 @@
-import { LayoutDashboard, Plus, Settings } from 'lucide-react'
+import { LayoutDashboard, Plus, Settings, Archive } from 'lucide-react'
 
-function Sidebar({ projects, activeView, activeProjectId, onSelectDashboard, onSelectProject, onAddProject, user, userProfile, onOpenSettings }) {
+function Sidebar({ projects, activeView, activeProjectId, onSelectDashboard, onSelectProject, onAddProject, onSelectArchive, user, userProfile, onOpenSettings }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -49,6 +49,14 @@ function Sidebar({ projects, activeView, activeProjectId, onSelectDashboard, onS
             )
           })}
         </div>
+      </div>
+
+      <div 
+        className={`nav-item archive-nav ${activeView === 'archive' ? 'active' : ''}`}
+        onClick={onSelectArchive}
+      >
+        <Archive size={18} />
+        <span>보관함</span>
       </div>
 
       <button className="add-project-btn" onClick={onAddProject}>
