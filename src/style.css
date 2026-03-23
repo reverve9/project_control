@@ -2958,8 +2958,12 @@ body {
 .roadmap-th-assignee { width: 60px; min-width: 60px; }
 .roadmap-th-output { width: 110px; min-width: 110px; }
 
+.roadmap-table tbody tr {
+  height: 56px;
+}
+
 .roadmap-td-major {
-  padding: 8px 10px;
+  padding: 10px 10px;
   font-size: var(--font-12);
   font-weight: var(--weight-600);
   color: var(--text-primary);
@@ -2971,7 +2975,7 @@ body {
 .roadmap-td-minor,
 .roadmap-td-assignee,
 .roadmap-td-output {
-  padding: 8px 10px;
+  padding: 10px 10px;
   font-size: var(--font-12);
   color: var(--text-primary);
   text-align: center;
@@ -2980,7 +2984,6 @@ body {
 .roadmap-td-cell {
   padding: 0;
   cursor: pointer;
-  min-height: 36px;
 }
 
 .roadmap-td-cell:hover {
@@ -2994,8 +2997,8 @@ body {
 
 /* 셀 체크리스트 */
 .roadmap-checklist {
-  padding: 6px 8px;
-  min-height: 36px;
+  padding: 8px 8px;
+  min-height: 56px;
 }
 
 .roadmap-check-item {
@@ -3063,9 +3066,12 @@ body {
   font-size: var(--font-12);
   font-family: inherit;
   color: var(--text-primary);
-  background: transparent;
-  padding: 2px 0;
+  background: #fffde7;
+  padding: 3px 4px;
   margin-top: 2px;
+  border-radius: 3px;
+  resize: none;
+  line-height: 1.4;
 }
 
 .roadmap-check-add {

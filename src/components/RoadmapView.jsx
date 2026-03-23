@@ -208,7 +208,7 @@ function RoadmapView({ projectId, user }) {
   }
 
   const handleCellInputKeyDown = (e, rowId, month) => {
-    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       handleAddCellItem(rowId, month)
     }
@@ -331,11 +331,12 @@ function RoadmapView({ projectId, user }) {
                               </div>
                             ))}
                             {isEditing ? (
-                              <input className="roadmap-check-input" value={editingCellValue}
+                              <textarea className="roadmap-check-input" value={editingCellValue}
                                 onChange={e => setEditingCellValue(e.target.value)}
                                 onKeyDown={e => handleCellInputKeyDown(e, row.id, m)}
                                 onBlur={() => { if (!editingCellValue.trim()) { setEditingCell(null) } }}
-                                placeholder="입력 후 Enter"
+                                placeholder="입력 후 Enter (Shift+Enter: 줄바꿈)"
+                                rows={1}
                                 autoFocus />
                             ) : (
                               <div className="roadmap-check-add" onClick={() => { setEditingCell(key); setEditingCellValue('') }}>
