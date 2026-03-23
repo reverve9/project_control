@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Check, X } from 'lucide-react'
 
 const QUARTERS = [
   { label: 'Q1', months: [1, 2, 3] },
@@ -155,36 +155,67 @@ function RoadmapView({ projectId, user }) {
     )
   }
 
-  // 셀 인라인 편집
+  // 셀 체크리스트
   const getCellKey = (rowId, month) => `${rowId}-${month}`
 
-  const handleCellClick = (rowId, month) => {
-    const key = getCellKey(rowId, month)
-    setEditingCell(key)
-    setEditingCellValue(cells[key]?.content || '')
+  const parseCellItems = (content) => {
+    if (!content) return []
+    try { return JSON.parse(content) }
+    catch { return content ? [{ text: content, done: false }] : [] }
   }
 
-  const handleCellSave = async (rowId, month) => {
+  const saveCellContent = async (rowId, month, items) => {
     const key = getCellKey(rowId, month)
     const existing = cells[key]
-    if (editingCellValue.trim() === '' && existing) {
+    const filtered = items.filter(i => i.text.trim())
+
+    if (filtered.length === 0 && existing) {
       await supabase.from('roadmap_cells').delete().eq('id', existing.id)
-    } else if (editingCellValue.trim() !== '') {
+    } else if (filtered.length > 0) {
+      const content = JSON.stringify(filtered)
       if (existing) {
-        await supabase.from('roadmap_cells').update({ content: editingCellValue.trim() }).eq('id', existing.id)
+        await supabase.from('roadmap_cells').update({ content }).eq('id', existing.id)
       } else {
         await supabase.from('roadmap_cells').insert({
-          row_id: rowId, year, month, content: editingCellValue.trim(), user_id: user.id
+          row_id: rowId, year, month, content, user_id: user.id
         })
       }
     }
-    setEditingCell(null)
     await fetchData()
   }
 
-  const handleCellKeyDown = (e, rowId, month) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleCellSave(rowId, month) }
-    if (e.key === 'Escape') setEditingCell(null)
+  const handleToggleCellItem = async (rowId, month, itemIndex) => {
+    const key = getCellKey(rowId, month)
+    const items = parseCellItems(cells[key]?.content)
+    items[itemIndex] = { ...items[itemIndex], done: !items[itemIndex].done }
+    await saveCellContent(rowId, month, items)
+  }
+
+  const handleDeleteCellItem = async (rowId, month, itemIndex) => {
+    const key = getCellKey(rowId, month)
+    const items = parseCellItems(cells[key]?.content)
+    items.splice(itemIndex, 1)
+    await saveCellContent(rowId, month, items)
+  }
+
+  const handleAddCellItem = async (rowId, month) => {
+    if (!editingCellValue.trim()) return
+    const key = getCellKey(rowId, month)
+    const items = parseCellItems(cells[key]?.content)
+    items.push({ text: editingCellValue.trim(), done: false })
+    await saveCellContent(rowId, month, items)
+    setEditingCellValue('')
+  }
+
+  const handleCellInputKeyDown = (e, rowId, month) => {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      handleAddCellItem(rowId, month)
+    }
+    if (e.key === 'Escape') {
+      setEditingCell(null)
+      setEditingCellValue('')
+    }
   }
 
   // 대분류 기준 rowspan
@@ -279,17 +310,39 @@ function RoadmapView({ projectId, user }) {
                     {quarter.months.map(m => {
                       const key = getCellKey(row.id, m)
                       const cell = cells[key]
+                      const items = parseCellItems(cell?.content)
                       const isEditing = editingCell === key
+
                       return (
-                        <td key={m} className="roadmap-td-cell" onClick={() => !isEditing && handleCellClick(row.id, m)}>
-                          {isEditing ? (
-                            <textarea className="roadmap-cell-input" value={editingCellValue}
-                              onChange={e => setEditingCellValue(e.target.value)}
-                              onBlur={() => handleCellSave(row.id, m)}
-                              onKeyDown={e => handleCellKeyDown(e, row.id, m)} autoFocus />
-                          ) : (
-                            <div className="roadmap-cell-content">{cell?.content || ''}</div>
-                          )}
+                        <td key={m} className="roadmap-td-cell">
+                          <div className="roadmap-checklist">
+                            {items.map((item, idx) => (
+                              <div key={idx} className={`roadmap-check-item ${item.done ? 'done' : ''}`}>
+                                <div
+                                  className={`roadmap-check-box ${item.done ? 'checked' : ''}`}
+                                  onClick={() => handleToggleCellItem(row.id, m, idx)}
+                                >
+                                  {item.done && <Check size={8} strokeWidth={2.5} />}
+                                </div>
+                                <span className="roadmap-check-text">{item.text}</span>
+                                <button className="roadmap-check-delete" onClick={() => handleDeleteCellItem(row.id, m, idx)}>
+                                  <X size={10} />
+                                </button>
+                              </div>
+                            ))}
+                            {isEditing ? (
+                              <input className="roadmap-check-input" value={editingCellValue}
+                                onChange={e => setEditingCellValue(e.target.value)}
+                                onKeyDown={e => handleCellInputKeyDown(e, row.id, m)}
+                                onBlur={() => { if (!editingCellValue.trim()) { setEditingCell(null) } }}
+                                placeholder="입력 후 Enter"
+                                autoFocus />
+                            ) : (
+                              <div className="roadmap-check-add" onClick={() => { setEditingCell(key); setEditingCellValue('') }}>
+                                <Plus size={10} /> 추가
+                              </div>
+                            )}
+                          </div>
                         </td>
                       )
                     })}
