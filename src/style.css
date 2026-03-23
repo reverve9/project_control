@@ -2113,6 +2113,156 @@ body {
   color: var(--text-primary);
 }
 
+/* 칸반 메이슨리 */
+.kanban-masonry {
+  columns: 2;
+  column-gap: 16px;
+}
+
+.kanban-card {
+  break-inside: avoid;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.kanban-card:hover {
+  border-color: var(--blue-muted);
+}
+
+.kanban-card-header {
+  margin-bottom: 12px;
+}
+
+.kanban-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.kanban-card-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kanban-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kanban-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.kanban-progress-text {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  min-width: 32px;
+  text-align: right;
+}
+
+.kanban-card-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-task {
+  background: var(--bg-primary);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.kanban-task.done {
+  opacity: 0.55;
+}
+
+.kanban-task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kanban-task-title {
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanban-task-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.kanban-task-assignee {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.kanban-task-items {
+  list-style: none;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kanban-task-items li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.kanban-task-items li.done span {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.kanban-check {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.kanban-check.checked {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
 /* 초대 코드 */
 .invite-code-box {
   display: flex;

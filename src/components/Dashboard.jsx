@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderOpen, Plus, FileText } from 'lucide-react'
+import { FolderOpen, Plus, FileText, Check, User } from 'lucide-react'
 
 function Dashboard({ projects, onSelectProject, onAddTask }) {
   const [selectedProjectId, setSelectedProjectId] = useState('')
@@ -185,42 +185,80 @@ function Dashboard({ projects, onSelectProject, onAddTask }) {
           </div>
         </div>
 
-        <div className="dashboard-card full-width">
-          <div className="dashboard-card-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <FileText size={18} strokeWidth={1.2} />
-              전체 태스크
-            </div>
-          </div>
-          <div className="dashboard-card-body">
-            {allTasks.length === 0 ? (
-              <div className="empty-state">
-                <FileText strokeWidth={1.2} />
-                <div className="empty-state-title">태스크가 없어요</div>
-                <div className="empty-state-desc">위에서 빠른 태스크를 추가해보세요</div>
-              </div>
-            ) : (
-              <div className="all-memo-grid">
-                {allTasks.map(task => (
-                  <div
-                    key={task.id}
-                    className="all-memo-card"
-                    onClick={() => onSelectProject(task.projectId)}
-                  >
-                    <div className="all-memo-header">
-                      <span className="all-memo-date">{formatDate(task.created_at)}</span>
-                      <span className="all-memo-title">{task.title}</span>
+        {/* 프로젝트 칸반 보드 (메이슨리) */}
+        {projects.length > 0 && (
+          <div className="kanban-masonry">
+            {projects.filter(p => p.tasks.length > 0).map(project => {
+              const total = project.tasks.reduce((sum, t) => sum + (t.items?.length || 0), 0)
+              const completed = project.tasks.reduce((sum, t) =>
+                sum + (t.items?.filter(d => d.completed).length || 0), 0
+              )
+              const progress = total > 0 ? Math.round((completed / total) * 100) : 0
+
+              return (
+                <div
+                  key={project.id}
+                  className="kanban-card"
+                  onClick={() => onSelectProject(project.id)}
+                >
+                  <div className="kanban-card-header">
+                    <div className="kanban-card-title">
+                      <div className="project-color" style={{ backgroundColor: project.color }} />
+                      <span>{project.name}</span>
                     </div>
-                    <div className="all-memo-project">
-                      <div className="project-color" style={{ backgroundColor: task.projectColor }} />
-                      <span>{task.projectName}</span>
-                    </div>
+                    {total > 0 && (
+                      <div className="kanban-card-progress">
+                        <div className="kanban-progress-bar">
+                          <div
+                            className="kanban-progress-fill"
+                            style={{ width: `${progress}%`, backgroundColor: project.color }}
+                          />
+                        </div>
+                        <span className="kanban-progress-text">{progress}%</span>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="kanban-card-tasks">
+                    {project.tasks.map(task => {
+                      const taskTotal = task.items?.length || 0
+                      const taskDone = task.items?.filter(d => d.completed).length || 0
+                      const allDone = taskTotal > 0 && taskDone === taskTotal
+
+                      return (
+                        <div key={task.id} className={`kanban-task ${allDone ? 'done' : ''}`}>
+                          <div className="kanban-task-header">
+                            <span className="kanban-task-title">{task.title}</span>
+                            {taskTotal > 0 && (
+                              <span className="kanban-task-count">{taskDone}/{taskTotal}</span>
+                            )}
+                          </div>
+                          {task.assignee && (
+                            <div className="kanban-task-assignee">
+                              <User size={11} strokeWidth={1.2} />
+                              <span>{task.assignee}</span>
+                            </div>
+                          )}
+                          {task.items && task.items.length > 0 && (
+                            <ul className="kanban-task-items">
+                              {task.items.map(item => (
+                                <li key={item.id} className={item.completed ? 'done' : ''}>
+                                  <div className={`kanban-check ${item.completed ? 'checked' : ''}`}>
+                                    {item.completed && <Check size={8} strokeWidth={2} />}
+                                  </div>
+                                  <span>{item.content}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
           </div>
-        </div>
+        )}
       </div>
     </>
   )
