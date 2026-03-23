@@ -143,16 +143,14 @@ body {
 }
 
 .sidebar-section-title {
-  font-size: var(--font-13);
-  font-weight: var(--weight-500);
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: var(--font-sm);
+  font-weight: var(--weight-600);
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
 }
 
 .sidebar-section-title.clickable {
   cursor: pointer;
-  border-radius: 4px;
   transition: color 0.15s;
 }
 
@@ -162,6 +160,7 @@ body {
 
 .sidebar-section-title.clickable.active {
   color: var(--navy);
+  font-weight: var(--weight-700);
 }
 
 .sidebar-sections {
@@ -2669,7 +2668,12 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  margin-top: 20px;
+}
+
+.sidebar-section-header:first-child {
+  margin-top: 8px;
 }
 
 .sidebar-section-header .sidebar-section-title {
