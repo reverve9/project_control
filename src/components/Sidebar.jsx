@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LayoutDashboard, Plus, Settings, Archive, ChevronDown, ChevronRight, FolderPlus, Edit2, CalendarRange } from 'lucide-react'
+import { Plus, Settings, Archive, ChevronDown, ChevronRight, FolderPlus, Edit2 } from 'lucide-react'
 
 function Sidebar({ 
   projects, 
@@ -168,26 +168,14 @@ function Sidebar({
         </div>
       </div>
 
-      <nav className="sidebar-nav">
-        <div
-          className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`}
-          onClick={onSelectDashboard}
-        >
-          <LayoutDashboard />
-          <span>대시보드</span>
-        </div>
-        <div
-          className={`nav-item ${activeView === 'roadmap' ? 'active' : ''}`}
-          onClick={onSelectRoadmap}
-        >
-          <CalendarRange />
-          <span>업무 일람</span>
-        </div>
-      </nav>
-
       <div className="sidebar-projects">
         <div className="sidebar-section-header">
-          <span className="sidebar-section-title">프로젝트</span>
+          <span
+            className={`sidebar-section-title clickable ${activeView === 'dashboard' ? 'active' : ''}`}
+            onClick={onSelectDashboard}
+          >
+            프로젝트
+          </span>
           <button className="sidebar-add-category-btn" onClick={onAddCategory} title="카테고리 추가">
             <FolderPlus size={14} />
           </button>
@@ -311,7 +299,16 @@ function Sidebar({
         </div>
       </div>
 
-      <div 
+      <div className="sidebar-section-standalone">
+        <div
+          className={`sidebar-section-title clickable ${activeView === 'roadmap' ? 'active' : ''}`}
+          onClick={onSelectRoadmap}
+        >
+          업무 일람
+        </div>
+      </div>
+
+      <div
         className={`nav-item archive-nav ${activeView === 'archive' ? 'active' : ''}`}
         onClick={onSelectArchive}
       >

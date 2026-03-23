@@ -149,8 +149,24 @@ body {
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 0 20px;
-  margin-bottom: 10px;
+}
+
+.sidebar-section-title.clickable {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.sidebar-section-title.clickable:hover {
+  color: var(--text-primary);
+}
+
+.sidebar-section-title.clickable.active {
+  color: var(--navy);
+}
+
+.sidebar-section-standalone {
+  padding: 12px 20px 0;
 }
 
 .sidebar-projects {
@@ -236,7 +252,7 @@ body {
 }
 
 .content-header {
-  padding: 24px 35px 16px;
+  padding: 40px 35px 16px;
   display: flex;
   flex-direction: column;
   justify-content: center;
