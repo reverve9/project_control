@@ -326,6 +326,7 @@ function RoadmapView({ projectId, user }) {
                                   {item.done && <Check size={8} strokeWidth={2.5} />}
                                 </div>
                                 <span className="roadmap-check-text">{item.text}</span>
+                                {item.text.length > 30 && <div className="roadmap-popover">{item.text}</div>}
                                 <button className="roadmap-check-delete" onClick={() => handleDeleteCellItem(row.id, m, idx)}>
                                   <X size={10} />
                                 </button>
