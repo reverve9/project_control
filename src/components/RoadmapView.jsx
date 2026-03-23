@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 
 const QUARTERS = [
   { label: 'Q1', months: [1, 2, 3] },
@@ -16,6 +16,7 @@ function RoadmapView({ projectId, user }) {
   const [quarterIndex, setQuarterIndex] = useState(Math.floor(new Date().getMonth() / 3))
   const [rows, setRows] = useState([])
   const [cells, setCells] = useState({})
+  const [formOpen, setFormOpen] = useState(false)
 
   // 입력 폼
   const [formMajor, setFormMajor] = useState('')
@@ -25,7 +26,7 @@ function RoadmapView({ projectId, user }) {
   // 인라인 편집
   const [editingCell, setEditingCell] = useState(null)
   const [editingCellValue, setEditingCellValue] = useState('')
-  const [editingField, setEditingField] = useState(null) // { id, field }
+  const [editingField, setEditingField] = useState(null)
   const [editingFieldValue, setEditingFieldValue] = useState('')
 
   const quarter = QUARTERS[quarterIndex]
@@ -95,7 +96,7 @@ function RoadmapView({ projectId, user }) {
     await fetchData()
   }
 
-  // 필드 인라인 수정 (major, minor, assignee, output)
+  // 필드 인라인 수정
   const handleStartFieldEdit = (id, field, value) => {
     setEditingField({ id, field })
     setEditingFieldValue(value || '')
@@ -131,7 +132,7 @@ function RoadmapView({ projectId, user }) {
     }
     return (
       <span className={`roadmap-field-text ${!value ? 'empty' : ''}`}
-        onDoubleClick={() => handleStartFieldEdit(row.id, field, value)}>
+        onClick={() => handleStartFieldEdit(row.id, field, value)}>
         {value || '-'}
       </span>
     )
@@ -169,7 +170,7 @@ function RoadmapView({ projectId, user }) {
     if (e.key === 'Escape') setEditingCell(null)
   }
 
-  // 대분류 기준 rowspan 계산
+  // 대분류 기준 rowspan
   const groupedRows = []
   let currentMajor = null
   let currentGroup = null
@@ -186,24 +187,34 @@ function RoadmapView({ projectId, user }) {
 
   return (
     <div className="roadmap-container">
-      {/* 상단 입력 폼 */}
-      <div className="roadmap-form">
-        <input className="roadmap-form-input major" value={formMajor}
-          onChange={e => setFormMajor(e.target.value)}
-          onKeyDown={handleFormKeyDown}
-          placeholder="업무 (대분류)" />
-        <input className="roadmap-form-input" value={formMinor}
-          onChange={e => setFormMinor(e.target.value)}
-          onKeyDown={handleFormKeyDown}
-          placeholder="업무 (소분류)" />
-        <input className="roadmap-form-input" value={formAssignee}
-          onChange={e => setFormAssignee(e.target.value)}
-          onKeyDown={handleFormKeyDown}
-          placeholder="담당자" />
-        <button className="btn btn-primary btn-sm" onClick={handleAddRow}
-          disabled={!formMajor.trim()}>
-          <Plus size={14} /> 추가
-        </button>
+      {/* TASK 아코디언 카드 */}
+      <div className="roadmap-card">
+        <div className="roadmap-card-header" onClick={() => setFormOpen(!formOpen)}>
+          <span className="roadmap-card-title">TASK</span>
+          {formOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </div>
+        {formOpen && (
+          <div className="roadmap-card-body">
+            <div className="roadmap-form">
+              <input className="roadmap-form-input major" value={formMajor}
+                onChange={e => setFormMajor(e.target.value)}
+                onKeyDown={handleFormKeyDown}
+                placeholder="업무 (대분류)" />
+              <input className="roadmap-form-input" value={formMinor}
+                onChange={e => setFormMinor(e.target.value)}
+                onKeyDown={handleFormKeyDown}
+                placeholder="업무 (소분류)" />
+              <input className="roadmap-form-input" value={formAssignee}
+                onChange={e => setFormAssignee(e.target.value)}
+                onKeyDown={handleFormKeyDown}
+                placeholder="담당자" />
+              <button className="btn btn-primary btn-sm" onClick={handleAddRow}
+                disabled={!formMajor.trim()}>
+                <Plus size={14} /> 추가
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 분기 네비게이션 */}
@@ -219,7 +230,7 @@ function RoadmapView({ projectId, user }) {
       {rows.length === 0 ? (
         <div className="empty-state" style={{ marginTop: '40px' }}>
           <div className="empty-state-title">업무추진표가 비어있어요</div>
-          <div className="empty-state-desc">위 폼에서 업무를 추가하세요</div>
+          <div className="empty-state-desc">TASK를 열어 업무를 추가하세요</div>
         </div>
       ) : (
         <div className="roadmap-table-wrapper">
