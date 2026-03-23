@@ -2958,9 +2958,6 @@ body {
 .roadmap-th-assignee { width: 60px; min-width: 60px; }
 .roadmap-th-output { width: 110px; min-width: 110px; }
 
-.roadmap-table tbody tr {
-  height: 72px;
-}
 
 .roadmap-td-major {
   padding: 10px 10px;
@@ -3003,9 +3000,10 @@ body {
 
 /* 셀 체크리스트 */
 .roadmap-checklist {
-  padding: 8px 8px;
+  padding: 10px 8px;
   min-height: 72px;
 }
+
 
 .roadmap-check-item {
   display: flex;
