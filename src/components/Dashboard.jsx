@@ -64,15 +64,7 @@ function Dashboard({ projects, onSelectProject }) {
                       <span>{project.name}</span>
                     </div>
                     {total > 0 && (
-                      <div className="kanban-card-progress">
-                        <div className="kanban-progress-bar">
-                          <div
-                            className="kanban-progress-fill"
-                            style={{ width: `${progress}%`, backgroundColor: project.color }}
-                          />
-                        </div>
-                        <span className="kanban-progress-text">{progress}%</span>
-                      </div>
+                      <span className="kanban-card-stats">{completed}/{total} {progress}%</span>
                     )}
                   </div>
                   <div className="kanban-card-tasks">
