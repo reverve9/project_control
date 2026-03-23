@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from 'lucide-react'
 
 const QUARTERS = [
   { label: 'Q1', months: [1, 2, 3] },
@@ -87,6 +87,23 @@ function RoadmapView({ projectId, user }) {
       e.preventDefault()
       handleAddRow()
     }
+  }
+
+  // 행 순서 변경
+  const handleMoveRow = async (id, direction) => {
+    const idx = rows.findIndex(r => r.id === id)
+    if (idx < 0) return
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (targetIdx < 0 || targetIdx >= rows.length) return
+
+    const current = rows[idx]
+    const target = rows[targetIdx]
+
+    await Promise.all([
+      supabase.from('roadmap_rows').update({ sort_order: target.sort_order }).eq('id', current.id),
+      supabase.from('roadmap_rows').update({ sort_order: current.sort_order }).eq('id', target.id)
+    ])
+    await fetchData()
   }
 
   // 행 삭제
@@ -277,9 +294,11 @@ function RoadmapView({ projectId, user }) {
                       )
                     })}
                     <td className="roadmap-td-action">
-                      <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)}>
-                        <Trash2 size={12} />
-                      </button>
+                      <div className="roadmap-action-group">
+                        <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'up')}><ArrowUp size={11} /></button>
+                        <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'down')}><ArrowDown size={11} /></button>
+                        <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)}><Trash2 size={11} /></button>
+                      </div>
                     </td>
                   </tr>
                 ))
