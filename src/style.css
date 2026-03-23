@@ -229,8 +229,7 @@ body {
 /* 메인 컨텐츠 */
 .main-content {
   flex: 1;
-  height: 720px;
-  max-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -271,7 +270,7 @@ body {
 
 .content-body {
   flex: 1;
-  padding: 24px 35px;
+  padding: 24px 35px 20px;
   overflow-y: auto;
 }
 

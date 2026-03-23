@@ -775,7 +775,6 @@ function App() {
           <Dashboard
             projects={projects}
             onSelectProject={selectProject}
-            onAddTask={handleQuickAddTask}
           />
         ) : activeView === 'archive' ? (
           <ArchiveView
