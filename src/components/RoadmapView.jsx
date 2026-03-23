@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 const QUARTERS = [
   { label: 'Q1', months: [1, 2, 3] },
@@ -14,128 +14,76 @@ const MONTH_NAMES = ['', '1월', '2월', '3월', '4월', '5월', '6월', '7월',
 function RoadmapView({ user }) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [quarterIndex, setQuarterIndex] = useState(Math.floor(new Date().getMonth() / 3))
-  const [rows, setRows] = useState([])
+  const [categories, setCategories] = useState([])
   const [cells, setCells] = useState({})
-  const [newRowLabel, setNewRowLabel] = useState('')
   const [editingCell, setEditingCell] = useState(null)
   const [editingCellValue, setEditingCellValue] = useState('')
-  const [editingRowId, setEditingRowId] = useState(null)
-  const [editingRowLabel, setEditingRowLabel] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editingLabel, setEditingLabel] = useState('')
+  const [editingOutput, setEditingOutput] = useState(null)
+  const [editingOutputValue, setEditingOutputValue] = useState('')
+  const [showAddModal, setShowAddModal] = useState(null) // 'category' | { type: 'group', categoryId } | { type: 'row', groupId }
+  const [addLabel, setAddLabel] = useState('')
 
   const quarter = QUARTERS[quarterIndex]
 
   const fetchData = useCallback(async () => {
-    const { data: rowsData } = await supabase
+    const { data: catData } = await supabase
+      .from('roadmap_categories')
+      .select('*')
+      .order('sort_order', { ascending: true })
+
+    const { data: grpData } = await supabase
+      .from('roadmap_groups')
+      .select('*')
+      .order('sort_order', { ascending: true })
+
+    const { data: rowData } = await supabase
       .from('roadmap_rows')
       .select('*')
       .order('sort_order', { ascending: true })
 
-    if (rowsData) setRows(rowsData)
-
-    const { data: cellsData } = await supabase
+    const { data: cellData } = await supabase
       .from('roadmap_cells')
       .select('*')
       .eq('year', year)
 
-    if (cellsData) {
-      const cellMap = {}
-      cellsData.forEach(c => {
+    // 셀 맵 구성
+    const cellMap = {}
+    if (cellData) {
+      cellData.forEach(c => {
         cellMap[`${c.row_id}-${c.month}`] = c
       })
-      setCells(cellMap)
     }
+    setCells(cellMap)
+
+    // 계층 구조 구성
+    const tree = (catData || []).map(cat => ({
+      ...cat,
+      groups: (grpData || [])
+        .filter(g => g.category_id === cat.id)
+        .map(grp => ({
+          ...grp,
+          rows: (rowData || []).filter(r => r.group_id === grp.id)
+        }))
+    }))
+    setCategories(tree)
   }, [year])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  const handleAddRow = async () => {
-    if (!newRowLabel.trim()) return
-    const maxOrder = rows.reduce((max, r) => Math.max(max, r.sort_order || 0), 0)
-
-    const { error } = await supabase
-      .from('roadmap_rows')
-      .insert({
-        label: newRowLabel.trim(),
-        user_id: user.id,
-        sort_order: maxOrder + 1
-      })
-
-    if (!error) {
-      setNewRowLabel('')
-      await fetchData()
-    }
+  // 카테고리의 총 행 수 (rowspan 계산용)
+  const getCategoryRowspan = (cat) => {
+    return cat.groups.reduce((sum, g) => sum + Math.max(g.rows.length, 1), 0) || 1
   }
 
-  const handleDeleteRow = async (rowId) => {
-    if (!window.confirm('이 항목을 삭제할까요?')) return
-    await supabase.from('roadmap_rows').delete().eq('id', rowId)
-    await fetchData()
+  const getGroupRowspan = (grp) => {
+    return Math.max(grp.rows.length, 1)
   }
 
-  const handleUpdateRowLabel = async (rowId) => {
-    if (!editingRowLabel.trim()) {
-      setEditingRowId(null)
-      return
-    }
-    await supabase
-      .from('roadmap_rows')
-      .update({ label: editingRowLabel.trim() })
-      .eq('id', rowId)
-
-    setEditingRowId(null)
-    await fetchData()
-  }
-
-  const getCellKey = (rowId, month) => `${rowId}-${month}`
-
-  const handleCellClick = (rowId, month) => {
-    const key = getCellKey(rowId, month)
-    const cell = cells[key]
-    setEditingCell(key)
-    setEditingCellValue(cell?.content || '')
-  }
-
-  const handleCellSave = async (rowId, month) => {
-    const key = getCellKey(rowId, month)
-    const existing = cells[key]
-
-    if (editingCellValue.trim() === '' && existing) {
-      await supabase.from('roadmap_cells').delete().eq('id', existing.id)
-    } else if (editingCellValue.trim() !== '') {
-      if (existing) {
-        await supabase
-          .from('roadmap_cells')
-          .update({ content: editingCellValue.trim() })
-          .eq('id', existing.id)
-      } else {
-        await supabase
-          .from('roadmap_cells')
-          .insert({
-            row_id: rowId,
-            year,
-            month,
-            content: editingCellValue.trim(),
-            user_id: user.id
-          })
-      }
-    }
-
-    setEditingCell(null)
-    await fetchData()
-  }
-
-  const handleCellKeyDown = (e, rowId, month) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault()
-      handleCellSave(rowId, month)
-    }
-    if (e.key === 'Escape') {
-      setEditingCell(null)
-    }
-  }
-
+  // 분기 네비게이션
   const handlePrevQuarter = () => {
     if (quarterIndex === 0) {
       setYear(y => y - 1)
@@ -154,124 +102,373 @@ function RoadmapView({ user }) {
     }
   }
 
-  const handleAddRowKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-      e.preventDefault()
-      handleAddRow()
+  // 추가
+  const handleAdd = async () => {
+    if (!addLabel.trim()) return
+    const label = addLabel.trim()
+
+    if (showAddModal === 'category') {
+      const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order || 0), 0)
+      await supabase.from('roadmap_categories').insert({
+        label, user_id: user.id, sort_order: maxOrder + 1
+      })
+    } else if (showAddModal?.type === 'group') {
+      const cat = categories.find(c => c.id === showAddModal.categoryId)
+      const maxOrder = cat?.groups.reduce((max, g) => Math.max(max, g.sort_order || 0), 0) || 0
+      await supabase.from('roadmap_groups').insert({
+        label, category_id: showAddModal.categoryId, user_id: user.id, sort_order: maxOrder + 1
+      })
+    } else if (showAddModal?.type === 'row') {
+      const grp = categories.flatMap(c => c.groups).find(g => g.id === showAddModal.groupId)
+      const maxOrder = grp?.rows.reduce((max, r) => Math.max(max, r.sort_order || 0), 0) || 0
+      await supabase.from('roadmap_rows').insert({
+        label, group_id: showAddModal.groupId, user_id: user.id, sort_order: maxOrder + 1
+      })
     }
+
+    setAddLabel('')
+    setShowAddModal(null)
+    await fetchData()
+  }
+
+  // 삭제
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('카테고리와 하위 항목이 모두 삭제됩니다.')) return
+    await supabase.from('roadmap_categories').delete().eq('id', id)
+    await fetchData()
+  }
+
+  const handleDeleteGroup = async (id) => {
+    if (!window.confirm('대분류와 하위 소분류가 모두 삭제됩니다.')) return
+    await supabase.from('roadmap_groups').delete().eq('id', id)
+    await fetchData()
+  }
+
+  const handleDeleteRow = async (id) => {
+    await supabase.from('roadmap_rows').delete().eq('id', id)
+    await fetchData()
+  }
+
+  // 라벨 수정 (공용)
+  const handleStartEdit = (id, label) => {
+    setEditingId(id)
+    setEditingLabel(label)
+  }
+
+  const handleSaveLabel = async (table, id) => {
+    if (!editingLabel.trim()) { setEditingId(null); return }
+    await supabase.from(table).update({ label: editingLabel.trim() }).eq('id', id)
+    setEditingId(null)
+    await fetchData()
+  }
+
+  const handleLabelKeyDown = (e, table, id) => {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSaveLabel(table, id)
+    if (e.key === 'Escape') setEditingId(null)
+  }
+
+  // 최종산출물 수정
+  const handleStartEditOutput = (id, output) => {
+    setEditingOutput(id)
+    setEditingOutputValue(output || '')
+  }
+
+  const handleSaveOutput = async (id) => {
+    await supabase.from('roadmap_categories').update({ output: editingOutputValue.trim() || null }).eq('id', id)
+    setEditingOutput(null)
+    await fetchData()
+  }
+
+  const handleOutputKeyDown = (e, id) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveOutput(id) }
+    if (e.key === 'Escape') setEditingOutput(null)
+  }
+
+  // 셀
+  const getCellKey = (rowId, month) => `${rowId}-${month}`
+
+  const handleCellClick = (rowId, month) => {
+    const key = getCellKey(rowId, month)
+    setEditingCell(key)
+    setEditingCellValue(cells[key]?.content || '')
+  }
+
+  const handleCellSave = async (rowId, month) => {
+    const key = getCellKey(rowId, month)
+    const existing = cells[key]
+
+    if (editingCellValue.trim() === '' && existing) {
+      await supabase.from('roadmap_cells').delete().eq('id', existing.id)
+    } else if (editingCellValue.trim() !== '') {
+      if (existing) {
+        await supabase.from('roadmap_cells').update({ content: editingCellValue.trim() }).eq('id', existing.id)
+      } else {
+        await supabase.from('roadmap_cells').insert({
+          row_id: rowId, year, month, content: editingCellValue.trim(), user_id: user.id
+        })
+      }
+    }
+
+    setEditingCell(null)
+    await fetchData()
+  }
+
+  const handleCellKeyDown = (e, rowId, month) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleCellSave(rowId, month) }
+    if (e.key === 'Escape') setEditingCell(null)
+  }
+
+  // 라벨 렌더 헬퍼
+  const renderLabel = (table, id, label) => {
+    if (editingId === id) {
+      return (
+        <input
+          className="roadmap-row-input"
+          value={editingLabel}
+          onChange={e => setEditingLabel(e.target.value)}
+          onBlur={() => handleSaveLabel(table, id)}
+          onKeyDown={e => handleLabelKeyDown(e, table, id)}
+          autoFocus
+        />
+      )
+    }
+    return (
+      <span className="roadmap-row-label" onDoubleClick={() => handleStartEdit(id, label)}>
+        {label}
+      </span>
+    )
+  }
+
+  // 테이블 행 생성
+  const buildRows = () => {
+    const tableRows = []
+
+    categories.forEach(cat => {
+      const catRowspan = getCategoryRowspan(cat)
+      let isFirstCatRow = true
+
+      if (cat.groups.length === 0) {
+        // 그룹 없는 카테고리
+        tableRows.push(
+          <tr key={`cat-empty-${cat.id}`}>
+            <td className="roadmap-td-category" rowSpan={1}>
+              <div className="roadmap-label-wrap">
+                {renderLabel('roadmap_categories', cat.id, cat.label)}
+                <div className="roadmap-label-actions">
+                  <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })} title="대분류 추가"><Plus size={11} /></button>
+                  <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)} title="삭제"><Trash2 size={11} /></button>
+                </div>
+              </div>
+            </td>
+            <td className="roadmap-td-output" rowSpan={1}>
+              {editingOutput === cat.id ? (
+                <textarea className="roadmap-cell-input" value={editingOutputValue} onChange={e => setEditingOutputValue(e.target.value)} onBlur={() => handleSaveOutput(cat.id)} onKeyDown={e => handleOutputKeyDown(e, cat.id)} autoFocus />
+              ) : (
+                <div className="roadmap-cell-content" onClick={() => handleStartEditOutput(cat.id, cat.output)}>{cat.output || ''}</div>
+              )}
+            </td>
+            <td className="roadmap-td-group" colSpan={1}><span className="roadmap-empty-hint">대분류 추가 필요</span></td>
+            <td className="roadmap-td-label"><span className="roadmap-empty-hint">-</span></td>
+            {quarter.months.map(m => <td key={m} className="roadmap-td-cell"></td>)}
+          </tr>
+        )
+        return
+      }
+
+      cat.groups.forEach((grp, gi) => {
+        const grpRowspan = getGroupRowspan(grp)
+        let isFirstGrpRow = true
+
+        if (grp.rows.length === 0) {
+          // 행 없는 그룹
+          tableRows.push(
+            <tr key={`grp-empty-${grp.id}`}>
+              {isFirstCatRow && (
+                <>
+                  <td className="roadmap-td-category" rowSpan={catRowspan}>
+                    <div className="roadmap-label-wrap">
+                      {renderLabel('roadmap_categories', cat.id, cat.label)}
+                      <div className="roadmap-label-actions">
+                        <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })} title="대분류 추가"><Plus size={11} /></button>
+                        <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)} title="삭제"><Trash2 size={11} /></button>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="roadmap-td-output" rowSpan={catRowspan}>
+                    {editingOutput === cat.id ? (
+                      <textarea className="roadmap-cell-input" value={editingOutputValue} onChange={e => setEditingOutputValue(e.target.value)} onBlur={() => handleSaveOutput(cat.id)} onKeyDown={e => handleOutputKeyDown(e, cat.id)} autoFocus />
+                    ) : (
+                      <div className="roadmap-cell-content" onClick={() => handleStartEditOutput(cat.id, cat.output)}>{cat.output || ''}</div>
+                    )}
+                  </td>
+                </>
+              )}
+              <td className="roadmap-td-group" rowSpan={1}>
+                <div className="roadmap-label-wrap">
+                  {renderLabel('roadmap_groups', grp.id, grp.label)}
+                  <div className="roadmap-label-actions">
+                    <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'row', groupId: grp.id })} title="소분류 추가"><Plus size={11} /></button>
+                    <button className="roadmap-mini-btn delete" onClick={() => handleDeleteGroup(grp.id)} title="삭제"><Trash2 size={11} /></button>
+                  </div>
+                </div>
+              </td>
+              <td className="roadmap-td-label"><span className="roadmap-empty-hint">소분류 추가 필요</span></td>
+              {quarter.months.map(m => <td key={m} className="roadmap-td-cell"></td>)}
+            </tr>
+          )
+          isFirstCatRow = false
+          return
+        }
+
+        grp.rows.forEach((row, ri) => {
+          tableRows.push(
+            <tr key={row.id}>
+              {isFirstCatRow && (
+                <>
+                  <td className="roadmap-td-category" rowSpan={catRowspan}>
+                    <div className="roadmap-label-wrap">
+                      {renderLabel('roadmap_categories', cat.id, cat.label)}
+                      <div className="roadmap-label-actions">
+                        <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })} title="대분류 추가"><Plus size={11} /></button>
+                        <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)} title="삭제"><Trash2 size={11} /></button>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="roadmap-td-output" rowSpan={catRowspan}>
+                    {editingOutput === cat.id ? (
+                      <textarea className="roadmap-cell-input" value={editingOutputValue} onChange={e => setEditingOutputValue(e.target.value)} onBlur={() => handleSaveOutput(cat.id)} onKeyDown={e => handleOutputKeyDown(e, cat.id)} autoFocus />
+                    ) : (
+                      <div className="roadmap-cell-content" onClick={() => handleStartEditOutput(cat.id, cat.output)}>{cat.output || ''}</div>
+                    )}
+                  </td>
+                </>
+              )}
+              {isFirstGrpRow && (
+                <td className="roadmap-td-group" rowSpan={grpRowspan}>
+                  <div className="roadmap-label-wrap">
+                    {renderLabel('roadmap_groups', grp.id, grp.label)}
+                    <div className="roadmap-label-actions">
+                      <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'row', groupId: grp.id })} title="소분류 추가"><Plus size={11} /></button>
+                      <button className="roadmap-mini-btn delete" onClick={() => handleDeleteGroup(grp.id)} title="삭제"><Trash2 size={11} /></button>
+                    </div>
+                  </div>
+                </td>
+              )}
+              <td className="roadmap-td-label">
+                <div className="roadmap-label-wrap">
+                  {renderLabel('roadmap_rows', row.id, row.label)}
+                  <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)} title="삭제"><Trash2 size={11} /></button>
+                </div>
+              </td>
+              {quarter.months.map(m => {
+                const key = getCellKey(row.id, m)
+                const cell = cells[key]
+                const isEditing = editingCell === key
+                return (
+                  <td key={m} className="roadmap-td-cell" onClick={() => !isEditing && handleCellClick(row.id, m)}>
+                    {isEditing ? (
+                      <textarea className="roadmap-cell-input" value={editingCellValue} onChange={e => setEditingCellValue(e.target.value)} onBlur={() => handleCellSave(row.id, m)} onKeyDown={e => handleCellKeyDown(e, row.id, m)} autoFocus />
+                    ) : (
+                      <div className="roadmap-cell-content">{cell?.content || ''}</div>
+                    )}
+                  </td>
+                )
+              })}
+            </tr>
+          )
+          isFirstCatRow = false
+          isFirstGrpRow = false
+        })
+      })
+    })
+
+    return tableRows
   }
 
   return (
     <>
       <header className="content-header">
-        <h1 className="content-title">업무 일람</h1>
-        <div className="roadmap-nav">
-          <button className="btn btn-ghost btn-sm" onClick={handlePrevQuarter}>
-            <ChevronLeft size={16} />
-          </button>
-          <span className="roadmap-nav-label">{year}년 {quarter.label}</span>
-          <button className="btn btn-ghost btn-sm" onClick={handleNextQuarter}>
-            <ChevronRight size={16} />
-          </button>
+        <div className="content-header-row">
+          <h1 className="content-title">업무 일람</h1>
+          <div className="roadmap-header-actions">
+            <div className="roadmap-nav">
+              <button className="btn btn-ghost btn-sm" onClick={handlePrevQuarter}>
+                <ChevronLeft size={16} />
+              </button>
+              <span className="roadmap-nav-label">{year}년 {quarter.label}</span>
+              <button className="btn btn-ghost btn-sm" onClick={handleNextQuarter}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowAddModal('category')}>
+              <Plus size={14} />
+              카테고리 추가
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="content-body">
-        <div className="roadmap-table-wrapper">
-          <table className="roadmap-table">
-            <thead>
-              <tr>
-                <th className="roadmap-th-label">항목</th>
-                {quarter.months.map(m => (
-                  <th key={m} className="roadmap-th-month">{MONTH_NAMES[m]}</th>
-                ))}
-                <th className="roadmap-th-action"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(row => (
-                <tr key={row.id}>
-                  <td className="roadmap-td-label">
-                    {editingRowId === row.id ? (
-                      <input
-                        className="roadmap-row-input"
-                        value={editingRowLabel}
-                        onChange={e => setEditingRowLabel(e.target.value)}
-                        onBlur={() => handleUpdateRowLabel(row.id)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleUpdateRowLabel(row.id)
-                          if (e.key === 'Escape') setEditingRowId(null)
-                        }}
-                        autoFocus
-                      />
-                    ) : (
-                      <span
-                        className="roadmap-row-label"
-                        onDoubleClick={() => {
-                          setEditingRowId(row.id)
-                          setEditingRowLabel(row.label)
-                        }}
-                      >
-                        {row.label}
-                      </span>
-                    )}
-                  </td>
-                  {quarter.months.map(m => {
-                    const key = getCellKey(row.id, m)
-                    const cell = cells[key]
-                    const isEditing = editingCell === key
-
-                    return (
-                      <td key={m} className="roadmap-td-cell" onClick={() => !isEditing && handleCellClick(row.id, m)}>
-                        {isEditing ? (
-                          <textarea
-                            className="roadmap-cell-input"
-                            value={editingCellValue}
-                            onChange={e => setEditingCellValue(e.target.value)}
-                            onBlur={() => handleCellSave(row.id, m)}
-                            onKeyDown={e => handleCellKeyDown(e, row.id, m)}
-                            autoFocus
-                          />
-                        ) : (
-                          <div className="roadmap-cell-content">
-                            {cell?.content || ''}
-                          </div>
-                        )}
-                      </td>
-                    )
-                  })}
-                  <td className="roadmap-td-action">
-                    <button
-                      className="roadmap-delete-btn"
-                      onClick={() => handleDeleteRow(row.id)}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </td>
+        {categories.length === 0 ? (
+          <div className="empty-state" style={{ marginTop: '60px' }}>
+            <div className="empty-state-title">업무 일람이 비어있어요</div>
+            <div className="empty-state-desc">카테고리를 추가해서 시작하세요</div>
+          </div>
+        ) : (
+          <div className="roadmap-table-wrapper">
+            <table className="roadmap-table">
+              <thead>
+                <tr>
+                  <th className="roadmap-th-category">카테고리</th>
+                  <th className="roadmap-th-output">최종산출물</th>
+                  <th className="roadmap-th-group">대분류</th>
+                  <th className="roadmap-th-label">소분류</th>
+                  {quarter.months.map(m => (
+                    <th key={m} className="roadmap-th-month">{MONTH_NAMES[m]}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="roadmap-add-row">
-          <input
-            className="form-input roadmap-add-input"
-            placeholder="항목 추가"
-            value={newRowLabel}
-            onChange={e => setNewRowLabel(e.target.value)}
-            onKeyDown={handleAddRowKeyDown}
-          />
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={handleAddRow}
-            disabled={!newRowLabel.trim()}
-          >
-            <Plus size={14} />
-            추가
-          </button>
-        </div>
+              </thead>
+              <tbody>
+                {buildRows()}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {/* 추가 모달 */}
+      {showAddModal && (
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) setShowAddModal(null) }}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {showAddModal === 'category' ? '카테고리 추가' : showAddModal?.type === 'group' ? '대분류 추가' : '소분류 추가'}
+              </h2>
+              <button className="modal-close-btn" onClick={() => setShowAddModal(null)}><X size={18} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">이름</label>
+                <input
+                  className="form-input"
+                  value={addLabel}
+                  onChange={e => setAddLabel(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAdd()
+                    if (e.key === 'Escape') setShowAddModal(null)
+                  }}
+                  placeholder="이름을 입력하세요"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setShowAddModal(null)}>취소</button>
+              <button className="btn btn-primary" onClick={handleAdd} disabled={!addLabel.trim()}>추가</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
