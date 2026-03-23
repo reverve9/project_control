@@ -11,7 +11,7 @@ const QUARTERS = [
 
 const MONTH_NAMES = ['', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
-function RoadmapView({ user }) {
+function RoadmapView({ projectId, user }) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [quarterIndex, setQuarterIndex] = useState(Math.floor(new Date().getMonth() / 3))
   const [categories, setCategories] = useState([])
@@ -22,7 +22,7 @@ function RoadmapView({ user }) {
   const [editingLabel, setEditingLabel] = useState('')
   const [editingOutput, setEditingOutput] = useState(null)
   const [editingOutputValue, setEditingOutputValue] = useState('')
-  const [showAddModal, setShowAddModal] = useState(null) // 'category' | { type: 'group', categoryId } | { type: 'row', groupId }
+  const [showAddModal, setShowAddModal] = useState(null)
   const [addLabel, setAddLabel] = useState('')
 
   const quarter = QUARTERS[quarterIndex]
@@ -31,6 +31,7 @@ function RoadmapView({ user }) {
     const { data: catData } = await supabase
       .from('roadmap_categories')
       .select('*')
+      .eq('project_id', projectId)
       .order('sort_order', { ascending: true })
 
     const { data: grpData } = await supabase
@@ -48,16 +49,13 @@ function RoadmapView({ user }) {
       .select('*')
       .eq('year', year)
 
-    // 셀 맵 구성
     const cellMap = {}
     if (cellData) {
-      cellData.forEach(c => {
-        cellMap[`${c.row_id}-${c.month}`] = c
-      })
+      cellData.forEach(c => { cellMap[`${c.row_id}-${c.month}`] = c })
     }
     setCells(cellMap)
 
-    // 계층 구조 구성
+    const catIds = (catData || []).map(c => c.id)
     const tree = (catData || []).map(cat => ({
       ...cat,
       groups: (grpData || [])
@@ -68,38 +66,23 @@ function RoadmapView({ user }) {
         }))
     }))
     setCategories(tree)
-  }, [year])
+  }, [year, projectId])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  useEffect(() => { fetchData() }, [fetchData])
 
-  // 카테고리의 총 행 수 (rowspan 계산용)
-  const getCategoryRowspan = (cat) => {
-    return cat.groups.reduce((sum, g) => sum + Math.max(g.rows.length, 1), 0) || 1
-  }
+  const getCategoryRowspan = (cat) =>
+    cat.groups.reduce((sum, g) => sum + Math.max(g.rows.length, 1), 0) || 1
 
-  const getGroupRowspan = (grp) => {
-    return Math.max(grp.rows.length, 1)
-  }
+  const getGroupRowspan = (grp) => Math.max(grp.rows.length, 1)
 
-  // 분기 네비게이션
   const handlePrevQuarter = () => {
-    if (quarterIndex === 0) {
-      setYear(y => y - 1)
-      setQuarterIndex(3)
-    } else {
-      setQuarterIndex(q => q - 1)
-    }
+    if (quarterIndex === 0) { setYear(y => y - 1); setQuarterIndex(3) }
+    else setQuarterIndex(q => q - 1)
   }
 
   const handleNextQuarter = () => {
-    if (quarterIndex === 3) {
-      setYear(y => y + 1)
-      setQuarterIndex(0)
-    } else {
-      setQuarterIndex(q => q + 1)
-    }
+    if (quarterIndex === 3) { setYear(y => y + 1); setQuarterIndex(0) }
+    else setQuarterIndex(q => q + 1)
   }
 
   // 추가
@@ -110,7 +93,7 @@ function RoadmapView({ user }) {
     if (showAddModal === 'category') {
       const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order || 0), 0)
       await supabase.from('roadmap_categories').insert({
-        label, user_id: user.id, sort_order: maxOrder + 1
+        label, project_id: projectId, user_id: user.id, sort_order: maxOrder + 1
       })
     } else if (showAddModal?.type === 'group') {
       const cat = categories.find(c => c.id === showAddModal.categoryId)
@@ -133,13 +116,13 @@ function RoadmapView({ user }) {
 
   // 삭제
   const handleDeleteCategory = async (id) => {
-    if (!window.confirm('카테고리와 하위 항목이 모두 삭제됩니다.')) return
+    if (!window.confirm('이 항목과 하위 내용이 모두 삭제됩니다.')) return
     await supabase.from('roadmap_categories').delete().eq('id', id)
     await fetchData()
   }
 
   const handleDeleteGroup = async (id) => {
-    if (!window.confirm('대분류와 하위 소분류가 모두 삭제됩니다.')) return
+    if (!window.confirm('이 항목과 하위 내용이 모두 삭제됩니다.')) return
     await supabase.from('roadmap_groups').delete().eq('id', id)
     await fetchData()
   }
@@ -149,11 +132,8 @@ function RoadmapView({ user }) {
     await fetchData()
   }
 
-  // 라벨 수정 (공용)
-  const handleStartEdit = (id, label) => {
-    setEditingId(id)
-    setEditingLabel(label)
-  }
+  // 라벨 수정
+  const handleStartEdit = (id, label) => { setEditingId(id); setEditingLabel(label) }
 
   const handleSaveLabel = async (table, id) => {
     if (!editingLabel.trim()) { setEditingId(null); return }
@@ -167,11 +147,8 @@ function RoadmapView({ user }) {
     if (e.key === 'Escape') setEditingId(null)
   }
 
-  // 최종산출물 수정
-  const handleStartEditOutput = (id, output) => {
-    setEditingOutput(id)
-    setEditingOutputValue(output || '')
-  }
+  // 최종산출물
+  const handleStartEditOutput = (id, output) => { setEditingOutput(id); setEditingOutputValue(output || '') }
 
   const handleSaveOutput = async (id) => {
     await supabase.from('roadmap_categories').update({ output: editingOutputValue.trim() || null }).eq('id', id)
@@ -218,7 +195,7 @@ function RoadmapView({ user }) {
     if (e.key === 'Escape') setEditingCell(null)
   }
 
-  // 라벨 렌더 헬퍼
+  // 라벨 렌더
   const renderLabel = (table, id, label) => {
     if (editingId === id) {
       return (
@@ -232,14 +209,10 @@ function RoadmapView({ user }) {
         />
       )
     }
-    return (
-      <span className="roadmap-row-label" onDoubleClick={() => handleStartEdit(id, label)}>
-        {label}
-      </span>
-    )
+    return <span className="roadmap-row-label" onDoubleClick={() => handleStartEdit(id, label)}>{label}</span>
   }
 
-  // 테이블 행 생성
+  // 테이블 행
   const buildRows = () => {
     const tableRows = []
 
@@ -248,18 +221,19 @@ function RoadmapView({ user }) {
       let isFirstCatRow = true
 
       if (cat.groups.length === 0) {
-        // 그룹 없는 카테고리
         tableRows.push(
           <tr key={`cat-empty-${cat.id}`}>
             <td className="roadmap-td-category" rowSpan={1}>
               <div className="roadmap-label-wrap">
                 {renderLabel('roadmap_categories', cat.id, cat.label)}
                 <div className="roadmap-label-actions">
-                  <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })} title="대분류 추가"><Plus size={11} /></button>
-                  <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)} title="삭제"><Trash2 size={11} /></button>
+                  <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })}><Plus size={11} /></button>
+                  <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)}><Trash2 size={11} /></button>
                 </div>
               </div>
             </td>
+            <td className="roadmap-td-group" colSpan={1}></td>
+            <td className="roadmap-td-label"></td>
             <td className="roadmap-td-output" rowSpan={1}>
               {editingOutput === cat.id ? (
                 <textarea className="roadmap-cell-input" value={editingOutputValue} onChange={e => setEditingOutputValue(e.target.value)} onBlur={() => handleSaveOutput(cat.id)} onKeyDown={e => handleOutputKeyDown(e, cat.id)} autoFocus />
@@ -267,20 +241,17 @@ function RoadmapView({ user }) {
                 <div className="roadmap-cell-content" onClick={() => handleStartEditOutput(cat.id, cat.output)}>{cat.output || ''}</div>
               )}
             </td>
-            <td className="roadmap-td-group" colSpan={1}><span className="roadmap-empty-hint">대분류 추가 필요</span></td>
-            <td className="roadmap-td-label"><span className="roadmap-empty-hint">-</span></td>
             {quarter.months.map(m => <td key={m} className="roadmap-td-cell"></td>)}
           </tr>
         )
         return
       }
 
-      cat.groups.forEach((grp, gi) => {
+      cat.groups.forEach(grp => {
         const grpRowspan = getGroupRowspan(grp)
         let isFirstGrpRow = true
 
         if (grp.rows.length === 0) {
-          // 행 없는 그룹
           tableRows.push(
             <tr key={`grp-empty-${grp.id}`}>
               {isFirstCatRow && (
@@ -289,17 +260,10 @@ function RoadmapView({ user }) {
                     <div className="roadmap-label-wrap">
                       {renderLabel('roadmap_categories', cat.id, cat.label)}
                       <div className="roadmap-label-actions">
-                        <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })} title="대분류 추가"><Plus size={11} /></button>
-                        <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)} title="삭제"><Trash2 size={11} /></button>
+                        <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })}><Plus size={11} /></button>
+                        <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)}><Trash2 size={11} /></button>
                       </div>
                     </div>
-                  </td>
-                  <td className="roadmap-td-output" rowSpan={catRowspan}>
-                    {editingOutput === cat.id ? (
-                      <textarea className="roadmap-cell-input" value={editingOutputValue} onChange={e => setEditingOutputValue(e.target.value)} onBlur={() => handleSaveOutput(cat.id)} onKeyDown={e => handleOutputKeyDown(e, cat.id)} autoFocus />
-                    ) : (
-                      <div className="roadmap-cell-content" onClick={() => handleStartEditOutput(cat.id, cat.output)}>{cat.output || ''}</div>
-                    )}
                   </td>
                 </>
               )}
@@ -307,12 +271,21 @@ function RoadmapView({ user }) {
                 <div className="roadmap-label-wrap">
                   {renderLabel('roadmap_groups', grp.id, grp.label)}
                   <div className="roadmap-label-actions">
-                    <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'row', groupId: grp.id })} title="소분류 추가"><Plus size={11} /></button>
-                    <button className="roadmap-mini-btn delete" onClick={() => handleDeleteGroup(grp.id)} title="삭제"><Trash2 size={11} /></button>
+                    <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'row', groupId: grp.id })}><Plus size={11} /></button>
+                    <button className="roadmap-mini-btn delete" onClick={() => handleDeleteGroup(grp.id)}><Trash2 size={11} /></button>
                   </div>
                 </div>
               </td>
-              <td className="roadmap-td-label"><span className="roadmap-empty-hint">소분류 추가 필요</span></td>
+              <td className="roadmap-td-label"></td>
+              {isFirstCatRow && (
+                <td className="roadmap-td-output" rowSpan={catRowspan}>
+                  {editingOutput === cat.id ? (
+                    <textarea className="roadmap-cell-input" value={editingOutputValue} onChange={e => setEditingOutputValue(e.target.value)} onBlur={() => handleSaveOutput(cat.id)} onKeyDown={e => handleOutputKeyDown(e, cat.id)} autoFocus />
+                  ) : (
+                    <div className="roadmap-cell-content" onClick={() => handleStartEditOutput(cat.id, cat.output)}>{cat.output || ''}</div>
+                  )}
+                </td>
+              )}
               {quarter.months.map(m => <td key={m} className="roadmap-td-cell"></td>)}
             </tr>
           )
@@ -320,36 +293,27 @@ function RoadmapView({ user }) {
           return
         }
 
-        grp.rows.forEach((row, ri) => {
+        grp.rows.forEach(row => {
           tableRows.push(
             <tr key={row.id}>
               {isFirstCatRow && (
-                <>
-                  <td className="roadmap-td-category" rowSpan={catRowspan}>
-                    <div className="roadmap-label-wrap">
-                      {renderLabel('roadmap_categories', cat.id, cat.label)}
-                      <div className="roadmap-label-actions">
-                        <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })} title="대분류 추가"><Plus size={11} /></button>
-                        <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)} title="삭제"><Trash2 size={11} /></button>
-                      </div>
+                <td className="roadmap-td-category" rowSpan={catRowspan}>
+                  <div className="roadmap-label-wrap">
+                    {renderLabel('roadmap_categories', cat.id, cat.label)}
+                    <div className="roadmap-label-actions">
+                      <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'group', categoryId: cat.id })}><Plus size={11} /></button>
+                      <button className="roadmap-mini-btn delete" onClick={() => handleDeleteCategory(cat.id)}><Trash2 size={11} /></button>
                     </div>
-                  </td>
-                  <td className="roadmap-td-output" rowSpan={catRowspan}>
-                    {editingOutput === cat.id ? (
-                      <textarea className="roadmap-cell-input" value={editingOutputValue} onChange={e => setEditingOutputValue(e.target.value)} onBlur={() => handleSaveOutput(cat.id)} onKeyDown={e => handleOutputKeyDown(e, cat.id)} autoFocus />
-                    ) : (
-                      <div className="roadmap-cell-content" onClick={() => handleStartEditOutput(cat.id, cat.output)}>{cat.output || ''}</div>
-                    )}
-                  </td>
-                </>
+                  </div>
+                </td>
               )}
               {isFirstGrpRow && (
                 <td className="roadmap-td-group" rowSpan={grpRowspan}>
                   <div className="roadmap-label-wrap">
                     {renderLabel('roadmap_groups', grp.id, grp.label)}
                     <div className="roadmap-label-actions">
-                      <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'row', groupId: grp.id })} title="소분류 추가"><Plus size={11} /></button>
-                      <button className="roadmap-mini-btn delete" onClick={() => handleDeleteGroup(grp.id)} title="삭제"><Trash2 size={11} /></button>
+                      <button className="roadmap-mini-btn" onClick={() => setShowAddModal({ type: 'row', groupId: grp.id })}><Plus size={11} /></button>
+                      <button className="roadmap-mini-btn delete" onClick={() => handleDeleteGroup(grp.id)}><Trash2 size={11} /></button>
                     </div>
                   </div>
                 </td>
@@ -357,9 +321,18 @@ function RoadmapView({ user }) {
               <td className="roadmap-td-label">
                 <div className="roadmap-label-wrap">
                   {renderLabel('roadmap_rows', row.id, row.label)}
-                  <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)} title="삭제"><Trash2 size={11} /></button>
+                  <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)}><Trash2 size={11} /></button>
                 </div>
               </td>
+              {isFirstCatRow && (
+                <td className="roadmap-td-output" rowSpan={catRowspan}>
+                  {editingOutput === cat.id ? (
+                    <textarea className="roadmap-cell-input" value={editingOutputValue} onChange={e => setEditingOutputValue(e.target.value)} onBlur={() => handleSaveOutput(cat.id)} onKeyDown={e => handleOutputKeyDown(e, cat.id)} autoFocus />
+                  ) : (
+                    <div className="roadmap-cell-content" onClick={() => handleStartEditOutput(cat.id, cat.output)}>{cat.output || ''}</div>
+                  )}
+                </td>
+              )}
               {quarter.months.map(m => {
                 const key = getCellKey(row.id, m)
                 const cell = cells[key]
@@ -386,69 +359,60 @@ function RoadmapView({ user }) {
   }
 
   return (
-    <>
-      <header className="content-header">
-        <div className="content-header-row">
-          <h1 className="content-title">업무 일람</h1>
-          <div className="roadmap-header-actions">
-            <div className="roadmap-nav">
-              <button className="btn btn-ghost btn-sm" onClick={handlePrevQuarter}>
-                <ChevronLeft size={16} />
-              </button>
-              <span className="roadmap-nav-label">{year}년 {quarter.label}</span>
-              <button className="btn btn-ghost btn-sm" onClick={handleNextQuarter}>
-                <ChevronRight size={16} />
-              </button>
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowAddModal('category')}>
-              <Plus size={14} />
-              카테고리 추가
-            </button>
-          </div>
+    <div className="roadmap-container">
+      <div className="roadmap-toolbar">
+        <div className="roadmap-nav">
+          <button className="btn btn-ghost btn-sm" onClick={handlePrevQuarter}>
+            <ChevronLeft size={16} />
+          </button>
+          <span className="roadmap-nav-label">{year}년 {quarter.label}</span>
+          <button className="btn btn-ghost btn-sm" onClick={handleNextQuarter}>
+            <ChevronRight size={16} />
+          </button>
         </div>
-      </header>
-
-      <div className="content-body">
-        {categories.length === 0 ? (
-          <div className="empty-state" style={{ marginTop: '60px' }}>
-            <div className="empty-state-title">업무 일람이 비어있어요</div>
-            <div className="empty-state-desc">카테고리를 추가해서 시작하세요</div>
-          </div>
-        ) : (
-          <div className="roadmap-table-wrapper">
-            <table className="roadmap-table">
-              <thead>
-                <tr>
-                  <th className="roadmap-th-category">카테고리</th>
-                  <th className="roadmap-th-output">최종산출물</th>
-                  <th className="roadmap-th-group">대분류</th>
-                  <th className="roadmap-th-label">소분류</th>
-                  {quarter.months.map(m => (
-                    <th key={m} className="roadmap-th-month">{MONTH_NAMES[m]}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {buildRows()}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <button className="btn btn-secondary btn-sm" onClick={() => setShowAddModal('category')}>
+          <Plus size={14} />
+          추가
+        </button>
       </div>
 
-      {/* 추가 모달 */}
+      {categories.length === 0 ? (
+        <div className="empty-state" style={{ marginTop: '60px' }}>
+          <div className="empty-state-title">업무추진표가 비어있어요</div>
+          <div className="empty-state-desc">항목을 추가해서 시작하세요</div>
+        </div>
+      ) : (
+        <div className="roadmap-table-wrapper">
+          <table className="roadmap-table">
+            <thead>
+              <tr>
+                <th className="roadmap-th-category"></th>
+                <th className="roadmap-th-group"></th>
+                <th className="roadmap-th-label"></th>
+                <th className="roadmap-th-output">산출물</th>
+                {quarter.months.map(m => (
+                  <th key={m} className="roadmap-th-month">{MONTH_NAMES[m]}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {buildRows()}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {showAddModal && (
         <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) setShowAddModal(null) }}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">
-                {showAddModal === 'category' ? '카테고리 추가' : showAddModal?.type === 'group' ? '대분류 추가' : '소분류 추가'}
+                {showAddModal === 'category' ? '항목 추가' : showAddModal?.type === 'group' ? '세부 항목 추가' : '하위 항목 추가'}
               </h2>
               <button className="modal-close-btn" onClick={() => setShowAddModal(null)}><X size={18} /></button>
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">이름</label>
                 <input
                   className="form-input"
                   value={addLabel}
@@ -469,7 +433,7 @@ function RoadmapView({ user }) {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
 

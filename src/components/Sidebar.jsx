@@ -10,7 +10,6 @@ function Sidebar({
   onSelectProject,
   onAddProject,
   onSelectArchive,
-  onSelectRoadmap,
   onAddCategory,
   onEditCategory,
   onReorderProject,
@@ -169,15 +168,6 @@ function Sidebar({
       </div>
 
       <div className="sidebar-sections">
-        <div className="sidebar-section-header">
-          <span
-            className={`sidebar-section-title clickable ${activeView === 'roadmap' ? 'active' : ''}`}
-            onClick={onSelectRoadmap}
-          >
-            업무 일람
-          </span>
-        </div>
-
         <div className="sidebar-section-header">
           <span
             className={`sidebar-section-title clickable ${activeView === 'dashboard' ? 'active' : ''}`}

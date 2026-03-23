@@ -2823,6 +2823,48 @@ body {
   text-align: center;
 }
 
+/* 프로젝트 탭 */
+.project-tabs {
+  display: flex;
+  gap: 0;
+  margin-top: 16px;
+}
+
+.project-tab {
+  padding: 8px 20px;
+  border: none;
+  background: none;
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.project-tab:hover {
+  color: var(--text-primary);
+}
+
+.project-tab.active {
+  color: var(--navy);
+  font-weight: var(--weight-semibold);
+  border-bottom-color: var(--navy);
+}
+
+/* 로드맵 컨테이너 */
+.roadmap-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.roadmap-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .roadmap-header-actions {
   display: flex;
   align-items: center;
@@ -2840,7 +2882,7 @@ body {
 
 .roadmap-table th,
 .roadmap-table td {
-  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   padding: 0;
   vertical-align: top;
 }
@@ -2850,9 +2892,10 @@ body {
   font-size: var(--font-xs);
   font-weight: var(--weight-semibold);
   color: var(--text-secondary);
-  background: var(--bg-primary);
+  background: transparent;
   text-align: center;
   white-space: nowrap;
+  border-bottom: 2px solid var(--border);
 }
 
 .roadmap-th-category { width: 120px; min-width: 120px; text-align: left; }
