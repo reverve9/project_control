@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { LayoutDashboard, Plus, Settings, Archive, ChevronDown, ChevronRight, FolderPlus, Edit2 } from 'lucide-react'
+import { LayoutDashboard, Plus, Settings, Archive, ChevronDown, ChevronRight, FolderPlus, Edit2, CalendarRange } from 'lucide-react'
 
 function Sidebar({ 
   projects, 
   categories,
   activeView, 
   activeProjectId, 
-  onSelectDashboard, 
-  onSelectProject, 
-  onAddProject, 
-  onSelectArchive, 
+  onSelectDashboard,
+  onSelectProject,
+  onAddProject,
+  onSelectArchive,
+  onSelectRoadmap,
   onAddCategory,
   onEditCategory,
   onReorderProject,
@@ -168,12 +169,19 @@ function Sidebar({
       </div>
 
       <nav className="sidebar-nav">
-        <div 
+        <div
           className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`}
           onClick={onSelectDashboard}
         >
           <LayoutDashboard />
           <span>대시보드</span>
+        </div>
+        <div
+          className={`nav-item ${activeView === 'roadmap' ? 'active' : ''}`}
+          onClick={onSelectRoadmap}
+        >
+          <CalendarRange />
+          <span>업무 일람</span>
         </div>
       </nav>
 

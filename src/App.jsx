@@ -11,6 +11,7 @@ import InfoModal from './components/InfoModal'
 import CategoryModal from './components/CategoryModal'
 import SettingsPanel from './components/SettingsPanel'
 import ArchiveView from './components/ArchiveView'
+import RoadmapView from './components/RoadmapView'
 
 const COLORS = ['#2c3e50', '#3498db', '#27ae60', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c', '#f39c12']
 
@@ -752,6 +753,7 @@ function App() {
         onSelectDashboard={() => setActiveView('dashboard')}
         onSelectProject={selectProject}
         onSelectArchive={() => setActiveView('archive')}
+        onSelectRoadmap={() => setActiveView('roadmap')}
         onAddProject={() => {
           setEditingProject(null)
           setShowProjectModal(true)
@@ -776,6 +778,8 @@ function App() {
             projects={projects}
             onSelectProject={selectProject}
           />
+        ) : activeView === 'roadmap' ? (
+          <RoadmapView user={user} />
         ) : activeView === 'archive' ? (
           <ArchiveView
             archivedProjects={archivedProjects}
