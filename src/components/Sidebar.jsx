@@ -168,6 +168,15 @@ function Sidebar({
         </div>
       </div>
 
+      <div className="sidebar-section-standalone">
+        <div
+          className={`sidebar-section-title clickable ${activeView === 'roadmap' ? 'active' : ''}`}
+          onClick={onSelectRoadmap}
+        >
+          업무 일람
+        </div>
+      </div>
+
       <div className="sidebar-projects">
         <div className="sidebar-section-header">
           <span
@@ -296,15 +305,6 @@ function Sidebar({
               )}
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="sidebar-section-standalone">
-        <div
-          className={`sidebar-section-title clickable ${activeView === 'roadmap' ? 'active' : ''}`}
-          onClick={onSelectRoadmap}
-        >
-          업무 일람
         </div>
       </div>
 
