@@ -335,13 +335,11 @@ function RoadmapView({ projectId, user }) {
                                 onChange={e => setEditingCellValue(e.target.value)}
                                 onKeyDown={e => handleCellInputKeyDown(e, row.id, m)}
                                 onBlur={() => { if (!editingCellValue.trim()) { setEditingCell(null) } }}
-                                placeholder="입력 후 Enter (Shift+Enter: 줄바꿈)"
+                                placeholder="Enter: 추가 / Shift+Enter: 줄바꿈"
                                 rows={1}
                                 autoFocus />
                             ) : (
-                              <div className="roadmap-check-add" onClick={() => { setEditingCell(key); setEditingCellValue('') }}>
-                                <Plus size={10} /> 추가
-                              </div>
+                              <div className="roadmap-check-empty" onClick={() => { setEditingCell(key); setEditingCellValue('') }} />
                             )}
                           </div>
                         </td>
