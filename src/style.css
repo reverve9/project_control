@@ -63,8 +63,7 @@ body {
 .app {
   display: flex;
   height: 100vh;
-  max-width: 1200px;
-  margin: 0 auto;
+  min-width: 1200px;
 }
 
 /* 사이드바 */
@@ -245,7 +244,7 @@ body {
 /* 메인 컨텐츠 */
 .main-content {
   flex: 1;
-  height: 100vh;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
