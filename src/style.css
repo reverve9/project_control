@@ -2959,7 +2959,7 @@ body {
 .roadmap-th-output { width: 110px; min-width: 110px; }
 
 .roadmap-table tbody tr {
-  height: 56px;
+  height: 72px;
 }
 
 .roadmap-td-major {
@@ -3004,7 +3004,7 @@ body {
 /* 셀 체크리스트 */
 .roadmap-checklist {
   padding: 8px 8px;
-  min-height: 56px;
+  min-height: 72px;
 }
 
 .roadmap-check-item {
