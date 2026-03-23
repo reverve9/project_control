@@ -2080,6 +2080,21 @@ body {
   border-color: var(--danger);
 }
 
+.user-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-role-badge.admin {
+  font-size: var(--font-xs);
+  color: var(--blue);
+  background: #eaf2fb;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: var(--weight-medium);
+}
+
 /* 초대 코드 */
 .invite-code-box {
   display: flex;

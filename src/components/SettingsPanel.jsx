@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { X, LogOut, Palette, Users, UserCheck, UserX, Copy, RefreshCw } from 'lucide-react'
+import { X, LogOut, Palette, Users, UserCheck, UserX, Copy, RefreshCw, Shield } from 'lucide-react'
 
 function SettingsPanel({ user, userProfile, onClose, onLogout }) {
   const [activeTab, setActiveTab] = useState('general')
@@ -30,7 +30,7 @@ function SettingsPanel({ user, userProfile, onClose, onLogout }) {
       .from('user_profiles')
       .select('*')
       .eq('approved', true)
-      .neq('role', 'admin')
+      .neq('id', user.id)
       .order('created_at', { ascending: false })
 
     setPendingUsers(pending || [])
@@ -104,6 +104,26 @@ function SettingsPanel({ user, userProfile, onClose, onLogout }) {
     await supabase
       .from('user_profiles')
       .update({ approved: false })
+      .eq('id', userId)
+
+    fetchUsers()
+  }
+
+  const promoteToAdmin = async (userId) => {
+    if (!confirm('이 사용자를 관리자로 승격하시겠습니까?')) return
+    await supabase
+      .from('user_profiles')
+      .update({ role: 'admin' })
+      .eq('id', userId)
+
+    fetchUsers()
+  }
+
+  const demoteFromAdmin = async (userId) => {
+    if (!confirm('이 사용자의 관리자 권한을 해제하시겠습니까?')) return
+    await supabase
+      .from('user_profiles')
+      .update({ role: 'user' })
       .eq('id', userId)
 
     fetchUsers()
@@ -212,13 +232,39 @@ function SettingsPanel({ user, userProfile, onClose, onLogout }) {
                 <ul className="user-list">
                   {approvedUsers.map(u => (
                     <li key={u.id} className="user-item">
-                      <span className="user-email">{u.email}</span>
-                      <button
-                        className="user-action-btn revoke"
-                        onClick={() => revokeUser(u.id)}
-                      >
-                        권한 취소
-                      </button>
+                      <div className="user-info-row">
+                        <span className="user-email">{u.name || u.email}</span>
+                        {u.role === 'admin' && (
+                          <span className="user-role-badge admin">관리자</span>
+                        )}
+                      </div>
+                      <div className="user-actions">
+                        {u.role === 'admin' ? (
+                          <button
+                            className="user-action-btn revoke"
+                            onClick={() => demoteFromAdmin(u.id)}
+                          >
+                            <Shield size={14} />
+                            관리자 해제
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className="user-action-btn approve"
+                              onClick={() => promoteToAdmin(u.id)}
+                            >
+                              <Shield size={14} />
+                              관리자
+                            </button>
+                            <button
+                              className="user-action-btn revoke"
+                              onClick={() => revokeUser(u.id)}
+                            >
+                              권한 취소
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>

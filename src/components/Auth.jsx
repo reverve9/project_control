@@ -58,15 +58,26 @@ function Auth({ onAuthSuccess }) {
 
         // 프로필 생성
         if (data.user) {
+          const trimmedCode = inviteCode.trim().toUpperCase() || null
+
           await supabase
             .from('user_profiles')
             .insert({
               id: data.user.id,
               email: data.user.email,
+              name: name.trim() || null,
               role: 'user',
               approved: autoApprove,
-              invite_code: inviteCode.trim().toUpperCase() || null
+              invite_code: trimmedCode
             })
+
+          // 초대코드 사용 후 비활성화 (1회용)
+          if (trimmedCode && autoApprove) {
+            await supabase
+              .from('invite_codes')
+              .update({ active: false })
+              .eq('code', trimmedCode)
+          }
 
           // 자동 승인이든 아니든 onAuthSuccess 호출
           // App.jsx에서 approved 체크해서 대기 화면 보여줌
