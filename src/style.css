@@ -3076,17 +3076,14 @@ body {
 
 .roadmap-check-delete {
   border: none;
-  background: var(--bg-secondary);
+  background: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 2px;
+  padding: 1px;
   border-radius: 2px;
   display: none;
   align-items: center;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
 }
 
 .roadmap-check-item:hover .roadmap-check-delete {
