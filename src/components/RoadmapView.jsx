@@ -130,7 +130,7 @@ function RoadmapView({ projectId, user }) {
   }
 
   const handleFieldKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveField() }
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSaveField() }
     if (e.key === 'Escape') setEditingField(null)
   }
 
@@ -140,10 +140,11 @@ function RoadmapView({ projectId, user }) {
 
     if (isEditing) {
       return (
-        <input className="roadmap-field-input" value={editingFieldValue}
+        <textarea className="roadmap-field-input" value={editingFieldValue}
           onChange={e => setEditingFieldValue(e.target.value)}
           onBlur={handleSaveField}
           onKeyDown={handleFieldKeyDown}
+          rows={Math.max(1, (editingFieldValue || '').split('\n').length)}
           autoFocus />
       )
     }
