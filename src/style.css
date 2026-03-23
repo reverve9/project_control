@@ -236,10 +236,7 @@ body {
 }
 
 .content-header {
-  height: 85px;
-  padding: 0 35px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
+  padding: 24px 35px 16px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -270,7 +267,7 @@ body {
 
 .content-body {
   flex: 1;
-  padding: 24px 35px 20px;
+  padding: 0 35px 20px;
   overflow-y: auto;
 }
 
