@@ -4,70 +4,68 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Project Control is a project/task management desktop app built with React + Electron + Supabase. Korean UI throughout. App ID: `com.ninebridge.projectcontrol`.
+Project Control은 프로젝트/태스크 관리 웹앱. React + Vite + Supabase 기반. Korean UI. Vercel 배포 (커밋+푸시 → 자동 배포).
 
 ## Commands
 
 - `npm run dev` — Vite dev server at http://localhost:5173
 - `npm run build` — Build React app to `dist/`
-- `npm run electron:dev` — Build + run Electron app
-- `npm run electron:build` — Build macOS DMG
-- `npm run electron:build:win` — Build Windows NSIS installer
 
-No test framework is configured.
+No test framework configured.
 
 ## Tech Stack
 
 - **React 18** (JavaScript/JSX, no TypeScript)
 - **Vite 5** build tool
-- **Electron 33** desktop shell (1200×800 window, tray icon on close)
-- **Supabase** for auth, database, and user management
+- **Supabase** for auth, database, user management
 - **lucide-react** for icons
-- **electron-store** for local data persistence
-- **Pretendard** font (Korean-optimized, loaded via CDN)
+- **Pretendard** font (Korean-optimized, CDN)
 - No routing library, no state management library, no UI component library
 
 ## Architecture
 
 ### State Management
-All application state lives in `src/App.jsx` via `useState`/`useCallback`. Data and handlers are prop-drilled to child components. No real-time subscriptions — data is refetched from Supabase after each mutation.
+All state in `src/App.jsx` via `useState`/`useCallback`. Prop-drilled. No real-time subscriptions — refetch after mutation.
 
 ### View Switching
-`activeView` state in App.jsx controls which view renders (Dashboard, ProjectDetail, ArchiveView). No router.
+`activeView` state: dashboard, project, archive. No router.
 
 ### Component Structure
 ```
-App.jsx              — Central state, all CRUD handlers, data fetching
-├── Auth.jsx         — Login/signup with invite code support
-├── Sidebar.jsx      — Navigation, project list with drag-and-drop reordering
-├── Dashboard.jsx    — Stats, project progress circles, memo list, quick add
-├── ProjectDetail.jsx — Project view with memos and info fields
-├── ArchiveView.jsx  — Restore or permanently delete archived items
-├── SettingsPanel.jsx — User settings, admin panel (user approval, invite codes)
-└── Modals: ProjectModal, CategoryModal, MemoModal, MemoViewModal, InfoModal
+App.jsx              — Central state, all CRUD handlers
+├── Auth.jsx         — Login/signup with invite code
+├── Sidebar.jsx      — "프로젝트" 클릭→대시보드, 프로젝트 리스트, 보관함
+├── Dashboard.jsx    — 통계 카드 + 프로젝트별 칸반 메이슨리 보드
+├── ProjectDetail.jsx — 탭: 대시보드(태스크/인포) | 업무추진표(RoadmapView)
+│   └── RoadmapView.jsx — 분기별 업무추진표 (TASK 아코디언 + 테이블)
+├── ArchiveView.jsx  — 보관된 프로젝트/태스크 복원/삭제
+├── SettingsPanel.jsx — 설정, 관리자 패널 (승인/초대코드/관리자 승격)
+└── Modals: ProjectModal, CategoryModal, TaskModal, TaskViewModal, InfoModal
 ```
 
 ### Supabase Data Model
 - **projects** — name, description, color, category_id, archived, sort_order
 - **project_categories** — name, sort_order
-- **memos** — project_id, title, priority (0-3), archived, started_at
-- **memo_details** — memo_id, content, completed, completed_at (checklist items)
-- **project_infos** — project_id, type, label, value (custom metadata)
-- **user_profiles** — email, role (user/admin), approved, invite_code
+- **tasks** — project_id, title, assignee, priority, archived, started_at
+- **task_items** — task_id, content, completed, completed_at
+- **project_infos** — project_id, type, label, value
+- **user_profiles** — email, name, role (user/admin), approved, invite_code
 - **invite_codes** — code, created_by, active
+- **roadmap_rows** — project_id, major, minor, assignee, output, sort_order
+- **roadmap_cells** — row_id, year, month, content (JSON checklist)
+- **style_guide** — content
 
-All tables use `user_id` for row-level filtering.
+All tables use `user_id` + RLS (`WITH CHECK`) for row-level isolation.
 
 ### Auth Flow
-Supabase email/password auth. New users either auto-approve with a valid invite code or wait for admin approval. Admin panel in SettingsPanel manages approvals and invite code generation.
-
-### Electron
-- `electron/main.js` — Main process, fixed 1200×800 window, tray icon, IPC handlers (`load-data`, `save-data`, `open-style-guide`)
-- `electron/preload.js` — Context-isolated IPC bridge
-- Production loads `dist/index.html`; dev loads localhost:5173
+Supabase email/password. Invite code → auto-approve. Otherwise admin approval. Admin can promote/demote users.
 
 ## Styling
 
-Custom CSS only (no component library). All design tokens are CSS variables defined in `src/style.css`. See `STYLE_GUIDE.md` for the complete variable reference including colors, typography, and layout dimensions.
+Custom CSS only. Design tokens as CSS variables in `src/style.css`. See `STYLE_GUIDE.md`.
 
-Key layout values: sidebar 310px, content area 890px (35px padding each side), header 85px.
+Key layout: min-width 1200px, sidebar 310px fixed, content flex: 1, content-header padding 70px top.
+
+### CSS Variable Notes
+- Font sizes: `--font-12` (12px), `--font-13`, `--font-14`, etc. (`--font-xs`, `--font-sm` 미정의 — 사용금지)
+- Font weights: `--weight-500`, `--weight-600`, `--weight-700` (`--weight-medium`, `--weight-semibold` 미정의 — 사용금지)
