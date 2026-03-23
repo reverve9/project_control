@@ -164,11 +164,7 @@ body {
   color: var(--navy);
 }
 
-.sidebar-section-standalone {
-  padding: 12px 20px 0;
-}
-
-.sidebar-projects {
+.sidebar-sections {
   flex: 1;
   display: flex;
   flex-direction: column;
