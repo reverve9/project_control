@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { FolderOpen, Plus, FileText } from 'lucide-react'
 
-function Dashboard({ projects, onSelectProject, onAddMemo }) {
+function Dashboard({ projects, onSelectProject, onAddTask }) {
   const [selectedProjectId, setSelectedProjectId] = useState('')
-  const [memoTitle, setMemoTitle] = useState('')
-  const [memoDetail, setMemoDetail] = useState('')
+  const [taskTitle, setTaskTitle] = useState('')
+  const [taskItem, setTaskItem] = useState('')
 
   const formatDate = (dateStr) => {
     if (!dateStr) return ''
@@ -14,57 +14,54 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
     return `${month}/${day}`
   }
 
-  // 통계 계산 (상세내용 기준)
   const totalProjects = projects.length
-  
-  const totalDetails = projects.reduce((sum, p) => 
-    sum + p.memos.reduce((mSum, m) => mSum + (m.details?.length || 0), 0), 0
+
+  const totalItems = projects.reduce((sum, p) =>
+    sum + p.tasks.reduce((tSum, t) => tSum + (t.items?.length || 0), 0), 0
   )
-  
-  const completedDetails = projects.reduce((sum, p) => 
-    sum + p.memos.reduce((mSum, m) => 
-      mSum + (m.details?.filter(d => d.completed).length || 0), 0
+
+  const completedItems = projects.reduce((sum, p) =>
+    sum + p.tasks.reduce((tSum, t) =>
+      tSum + (t.items?.filter(d => d.completed).length || 0), 0
     ), 0
   )
-  
-  const pendingDetails = totalDetails - completedDetails
 
-  // 프로젝트 진행률 (상세내용 기준)
+  const pendingItems = totalItems - completedItems
+
   const projectProgress = projects.map(p => {
-    const total = p.memos.reduce((sum, m) => sum + (m.details?.length || 0), 0)
-    const completed = p.memos.reduce((sum, m) => 
-      sum + (m.details?.filter(d => d.completed).length || 0), 0
+    const total = p.tasks.reduce((sum, t) => sum + (t.items?.length || 0), 0)
+    const completed = p.tasks.reduce((sum, t) =>
+      sum + (t.items?.filter(d => d.completed).length || 0), 0
     )
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0
     return { ...p, progress, completed, total }
   }).sort((a, b) => b.progress - a.progress)
 
-  // 전체 메모 (최신순)
-  const allMemos = projects.flatMap(p => 
-    p.memos.map(m => ({ ...m, projectName: p.name, projectColor: p.color, projectId: p.id }))
+  const allTasks = projects.flatMap(p =>
+    p.tasks.map(t => ({ ...t, projectName: p.name, projectColor: p.color, projectId: p.id }))
   ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
-  const handleSubmitMemo = (e) => {
+  const handleSubmitTask = (e) => {
     e.preventDefault()
-    if (!selectedProjectId || !memoTitle.trim()) return
+    if (!selectedProjectId || !taskTitle.trim()) return
 
-    const details = memoDetail.trim() 
-      ? [{ content: memoDetail.trim(), completed: false }] 
+    const items = taskItem.trim()
+      ? [{ content: taskItem.trim(), completed: false }]
       : []
 
-    onAddMemo(selectedProjectId, {
-      title: memoTitle.trim(),
-      details
+    onAddTask(selectedProjectId, {
+      title: taskTitle.trim(),
+      items
     })
 
-    setMemoTitle('')
-    setMemoDetail('')
+    setTaskTitle('')
+    setTaskItem('')
   }
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
-      handleSubmitMemo(e)
+      handleSubmitTask(e)
     }
   }
 
@@ -83,20 +80,19 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
           </div>
           <div className="stat-card">
             <div className="stat-label">전체 항목</div>
-            <div className="stat-value">{totalDetails}</div>
+            <div className="stat-value">{totalItems}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">완료됨</div>
-            <div className="stat-value success">{completedDetails}</div>
+            <div className="stat-value success">{completedItems}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">진행중</div>
-            <div className="stat-value warning">{pendingDetails}</div>
+            <div className="stat-value warning">{pendingItems}</div>
           </div>
         </div>
 
         <div className="progress-grid">
-          {/* 좌측: 프로젝트별 진행률 */}
           <div className="dashboard-card">
             <div className="dashboard-card-header">
               <FolderOpen size={18} strokeWidth={1.2} />
@@ -111,16 +107,13 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
                 </div>
               ) : (
                 projectProgress.map(project => (
-                  <div 
-                    key={project.id} 
+                  <div
+                    key={project.id}
                     className="project-progress-item"
                     onClick={() => onSelectProject(project.id)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <div 
-                      className="project-color" 
-                      style={{ backgroundColor: project.color }}
-                    />
+                    <div className="project-color" style={{ backgroundColor: project.color }} />
                     <div className="project-progress-info">
                       <div className="project-progress-name">{project.name}</div>
                     </div>
@@ -134,25 +127,24 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
             </div>
           </div>
 
-          {/* 우측: 빠른 메모 입력 */}
           <div className="dashboard-card">
             <div className="dashboard-card-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Plus size={18} strokeWidth={1.2} />
-                빠른 메모 추가
+                빠른 태스크 추가
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-primary btn-sm"
-                disabled={!selectedProjectId || !memoTitle.trim()}
-                onClick={handleSubmitMemo}
+                disabled={!selectedProjectId || !taskTitle.trim()}
+                onClick={handleSubmitTask}
               >
                 <Plus size={14} strokeWidth={1.2} />
                 추가
               </button>
             </div>
             <div className="dashboard-card-body">
-              <form onSubmit={handleSubmitMemo} className="quick-memo-form-vertical">
+              <form onSubmit={handleSubmitTask} className="quick-memo-form-vertical">
                 <div className="form-group">
                   <label className="form-label">프로젝트</label>
                   <select
@@ -171,20 +163,20 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="메모 제목"
-                    value={memoTitle}
-                    onChange={e => setMemoTitle(e.target.value)}
+                    placeholder="태스크 제목"
+                    value={taskTitle}
+                    onChange={e => setTaskTitle(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">상세내용 (선택)</label>
+                  <label className="form-label">항목 (선택)</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="상세내용 입력"
-                    value={memoDetail}
-                    onChange={e => setMemoDetail(e.target.value)}
+                    placeholder="항목 입력"
+                    value={taskItem}
+                    onChange={e => setTaskItem(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
                 </div>
@@ -193,39 +185,35 @@ function Dashboard({ projects, onSelectProject, onAddMemo }) {
           </div>
         </div>
 
-        {/* 전체 메모 리스트 */}
         <div className="dashboard-card full-width">
           <div className="dashboard-card-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <FileText size={18} strokeWidth={1.2} />
-              전체 메모
+              전체 태스크
             </div>
           </div>
           <div className="dashboard-card-body">
-            {allMemos.length === 0 ? (
+            {allTasks.length === 0 ? (
               <div className="empty-state">
                 <FileText strokeWidth={1.2} />
-                <div className="empty-state-title">메모가 없어요</div>
-                <div className="empty-state-desc">위에서 빠른 메모를 추가해보세요</div>
+                <div className="empty-state-title">태스크가 없어요</div>
+                <div className="empty-state-desc">위에서 빠른 태스크를 추가해보세요</div>
               </div>
             ) : (
               <div className="all-memo-grid">
-                {allMemos.map(memo => (
-                  <div 
-                    key={memo.id} 
+                {allTasks.map(task => (
+                  <div
+                    key={task.id}
                     className="all-memo-card"
-                    onClick={() => onSelectProject(memo.projectId)}
+                    onClick={() => onSelectProject(task.projectId)}
                   >
                     <div className="all-memo-header">
-                      <span className="all-memo-date">{formatDate(memo.created_at)}</span>
-                      <span className="all-memo-title">{memo.title}</span>
+                      <span className="all-memo-date">{formatDate(task.created_at)}</span>
+                      <span className="all-memo-title">{task.title}</span>
                     </div>
                     <div className="all-memo-project">
-                      <div 
-                        className="project-color" 
-                        style={{ backgroundColor: memo.projectColor }}
-                      />
-                      <span>{memo.projectName}</span>
+                      <div className="project-color" style={{ backgroundColor: task.projectColor }} />
+                      <span>{task.projectName}</span>
                     </div>
                   </div>
                 ))}

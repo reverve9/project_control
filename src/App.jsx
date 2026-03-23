@@ -5,8 +5,8 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import ProjectDetail from './components/ProjectDetail'
 import ProjectModal from './components/ProjectModal'
-import MemoModal from './components/MemoModal'
-import MemoViewModal from './components/MemoViewModal'
+import TaskModal from './components/TaskModal'
+import TaskViewModal from './components/TaskViewModal'
 import InfoModal from './components/InfoModal'
 import CategoryModal from './components/CategoryModal'
 import SettingsPanel from './components/SettingsPanel'
@@ -24,18 +24,18 @@ function App() {
   const [activeView, setActiveView] = useState('dashboard')
   const [activeProjectId, setActiveProjectId] = useState(null)
   const [showProjectModal, setShowProjectModal] = useState(false)
-  const [showMemoModal, setShowMemoModal] = useState(false)
-  const [showMemoViewModal, setShowMemoViewModal] = useState(false)
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [showTaskViewModal, setShowTaskViewModal] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
-  const [editingMemo, setEditingMemo] = useState(null)
-  const [viewingMemo, setViewingMemo] = useState(null)
+  const [editingTask, setEditingTask] = useState(null)
+  const [viewingTask, setViewingTask] = useState(null)
   const [editingInfo, setEditingInfo] = useState(null)
   const [editingCategory, setEditingCategory] = useState(null)
   const [archivedProjects, setArchivedProjects] = useState([])
-  const [archivedMemos, setArchivedMemos] = useState([])
+  const [archivedTasks, setArchivedTasks] = useState([])
 
   // 카테고리 데이터 가져오기
   const fetchCategories = useCallback(async () => {
@@ -69,32 +69,31 @@ function App() {
 
       if (infosError) throw infosError
 
-      const { data: memosData, error: memosError } = await supabase
-        .from('memos')
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('tasks')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (memosError) throw memosError
+      if (tasksError) throw tasksError
 
-      const { data: detailsData, error: detailsError } = await supabase
-        .from('memo_details')
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('task_items')
         .select('*')
         .order('created_at', { ascending: true })
 
-      if (detailsError) throw detailsError
+      if (itemsError) throw itemsError
 
-      const memosWithDetails = memosData.map(memo => ({
-        ...memo,
-        details: detailsData.filter(d => d.memo_id === memo.id)
+      const tasksWithItems = tasksData.map(task => ({
+        ...task,
+        items: itemsData.filter(d => d.task_id === task.id)
       }))
 
-      // archived가 아닌 프로젝트만, archived가 아닌 메모만 포함
       const projectsWithData = projectsData
         .filter(project => !project.archived)
         .map(project => ({
           ...project,
           infos: infosData.filter(info => info.project_id === project.id),
-          memos: memosWithDetails.filter(memo => memo.project_id === project.id && !memo.archived)
+          tasks: tasksWithItems.filter(task => task.project_id === project.id && !task.archived)
         }))
 
       setProjects(projectsWithData)
@@ -128,7 +127,7 @@ function App() {
         .select('*')
         .eq('id', user.id)
         .single()
-      
+
       if (data) {
         setUserProfile(data)
       }
@@ -145,7 +144,6 @@ function App() {
   useEffect(() => {
     const loadArchivedItems = async () => {
       try {
-        // 보관된 프로젝트 로드
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select('*')
@@ -155,37 +153,35 @@ function App() {
         if (projectsError) throw projectsError
         setArchivedProjects(projectsData || [])
 
-        // 보관된 메모 로드
-        const { data: memosData, error: memosError } = await supabase
-          .from('memos')
+        const { data: tasksData, error: tasksError } = await supabase
+          .from('tasks')
           .select('*')
           .eq('archived', true)
           .order('created_at', { ascending: false })
 
-        if (memosError) throw memosError
+        if (tasksError) throw tasksError
 
-        const { data: detailsData, error: detailsError } = await supabase
-          .from('memo_details')
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('task_items')
           .select('*')
 
-        if (detailsError) throw detailsError
+        if (itemsError) throw itemsError
 
-        // 모든 프로젝트 정보 가져오기 (보관된 것 포함)
         const { data: allProjects } = await supabase
           .from('projects')
           .select('id, name, color')
 
-        const result = memosData.map(memo => {
-          const project = allProjects?.find(p => p.id === memo.project_id) || {}
+        const result = tasksData.map(task => {
+          const project = allProjects?.find(p => p.id === task.project_id) || {}
           return {
-            ...memo,
-            details: detailsData.filter(d => d.memo_id === memo.id),
+            ...task,
+            items: itemsData.filter(d => d.task_id === task.id),
             projectName: project.name || '삭제된 프로젝트',
             projectColor: project.color || '#ccc',
-            projectId: memo.project_id
+            projectId: task.project_id
           }
         })
-        setArchivedMemos(result)
+        setArchivedTasks(result)
       } catch (error) {
         console.error('보관 항목 로드 실패:', error)
       }
@@ -204,7 +200,6 @@ function App() {
     setActiveProjectId(null)
   }
 
-  // 로그인 안 됐으면 Auth 화면
   if (authLoading) {
     return (
       <div className="loading-screen">
@@ -218,7 +213,6 @@ function App() {
     return <Auth onAuthSuccess={setUser} />
   }
 
-  // 승인 안 됐으면 대기 화면
   if (userProfile && !userProfile.approved) {
     return (
       <div className="pending-screen">
@@ -234,7 +228,6 @@ function App() {
 
   const activeProject = projects.find(p => p.id === activeProjectId)
 
-  // 프로젝트 updated_at 업데이트
   const updateProjectTimestamp = async (projectId) => {
     await supabase
       .from('projects')
@@ -276,7 +269,7 @@ function App() {
 
         if (error) throw error
 
-        setProjects(prev => [...prev, { ...data, infos: [], memos: [] }])
+        setProjects(prev => [...prev, { ...data, infos: [], tasks: [] }])
       }
       setShowProjectModal(false)
     } catch (error) {
@@ -303,7 +296,6 @@ function App() {
     }
   }
 
-  // 프로젝트 인포 저장
   const handleSaveInfo = async (infoData) => {
     try {
       if (editingInfo) {
@@ -340,7 +332,6 @@ function App() {
     }
   }
 
-  // 프로젝트 인포 삭제
   const handleDeleteInfo = async (infoId) => {
     try {
       const { error } = await supabase
@@ -357,29 +348,30 @@ function App() {
     }
   }
 
-  const handleSaveMemo = async (memoData) => {
+  const handleSaveTask = async (taskData) => {
     try {
-      if (editingMemo) {
-        const { error: memoError } = await supabase
-          .from('memos')
-          .update({ 
-            title: memoData.title,
-            priority: memoData.priority || 0
+      if (editingTask) {
+        const { error: taskError } = await supabase
+          .from('tasks')
+          .update({
+            title: taskData.title,
+            assignee: taskData.assignee,
+            priority: taskData.priority || 0
           })
-          .eq('id', editingMemo.id)
+          .eq('id', editingTask.id)
 
-        if (memoError) throw memoError
+        if (taskError) throw taskError
 
         const { error: deleteError } = await supabase
-          .from('memo_details')
+          .from('task_items')
           .delete()
-          .eq('memo_id', editingMemo.id)
+          .eq('task_id', editingTask.id)
 
         if (deleteError) throw deleteError
 
-        if (memoData.details.length > 0) {
-          const detailsToInsert = memoData.details.map(d => ({
-            memo_id: editingMemo.id,
+        if (taskData.items.length > 0) {
+          const itemsToInsert = taskData.items.map(d => ({
+            task_id: editingTask.id,
             content: d.content,
             completed: d.completed,
             completed_at: d.completed ? (d.completed_at || new Date().toISOString()) : null,
@@ -387,33 +379,34 @@ function App() {
           }))
 
           const { error: insertError } = await supabase
-            .from('memo_details')
-            .insert(detailsToInsert)
+            .from('task_items')
+            .insert(itemsToInsert)
 
           if (insertError) throw insertError
         }
 
         await updateProjectTimestamp(activeProjectId)
         await fetchProjects()
-        setEditingMemo(null)
+        setEditingTask(null)
       } else {
-        const { data: newMemo, error: memoError } = await supabase
-          .from('memos')
+        const { data: newTask, error: taskError } = await supabase
+          .from('tasks')
           .insert({
             project_id: activeProjectId,
-            title: memoData.title,
-            priority: memoData.priority || 0,
+            title: taskData.title,
+            assignee: taskData.assignee,
+            priority: taskData.priority || 0,
             user_id: user.id,
             started_at: new Date().toISOString()
           })
           .select()
           .single()
 
-        if (memoError) throw memoError
+        if (taskError) throw taskError
 
-        if (memoData.details.length > 0) {
-          const detailsToInsert = memoData.details.map(d => ({
-            memo_id: newMemo.id,
+        if (taskData.items.length > 0) {
+          const itemsToInsert = taskData.items.map(d => ({
+            task_id: newTask.id,
             content: d.content,
             completed: d.completed,
             completed_at: d.completed ? new Date().toISOString() : null,
@@ -421,8 +414,8 @@ function App() {
           }))
 
           const { error: insertError } = await supabase
-            .from('memo_details')
-            .insert(detailsToInsert)
+            .from('task_items')
+            .insert(itemsToInsert)
 
           if (insertError) throw insertError
         }
@@ -430,78 +423,78 @@ function App() {
         await updateProjectTimestamp(activeProjectId)
         await fetchProjects()
       }
-      setShowMemoModal(false)
+      setShowTaskModal(false)
     } catch (error) {
-      console.error('메모 저장 실패:', error)
+      console.error('태스크 저장 실패:', error)
     }
   }
 
-  const handleToggleDetail = async (detailId, currentCompleted) => {
+  const handleToggleItem = async (itemId, currentCompleted) => {
     const newCompleted = !currentCompleted
     const completedAt = newCompleted ? new Date().toISOString() : null
 
     try {
       const { error } = await supabase
-        .from('memo_details')
-        .update({ 
+        .from('task_items')
+        .update({
           completed: newCompleted,
           completed_at: completedAt
         })
-        .eq('id', detailId)
+        .eq('id', itemId)
 
       if (error) throw error
 
       await updateProjectTimestamp(activeProjectId)
       await fetchProjects()
     } catch (error) {
-      console.error('상세내용 토글 실패:', error)
+      console.error('항목 토글 실패:', error)
     }
   }
 
-  const handleDeleteMemo = async (projectId, memoId) => {
+  const handleDeleteTask = async (projectId, taskId) => {
     try {
       const { error } = await supabase
-        .from('memos')
+        .from('tasks')
         .delete()
-        .eq('id', memoId)
+        .eq('id', taskId)
 
       if (error) throw error
 
       await updateProjectTimestamp(projectId)
       setProjects(prev => prev.map(p =>
         p.id === projectId
-          ? { ...p, memos: p.memos.filter(m => m.id !== memoId) }
+          ? { ...p, tasks: p.tasks.filter(t => t.id !== taskId) }
           : p
       ))
     } catch (error) {
-      console.error('메모 삭제 실패:', error)
+      console.error('태스크 삭제 실패:', error)
     }
   }
 
-  const handleEditMemo = (memo) => {
-    setEditingMemo(memo)
-    setShowMemoModal(true)
+  const handleEditTask = (task) => {
+    setEditingTask(task)
+    setShowTaskModal(true)
   }
 
-  // 대시보드에서 빠른 메모 추가
-  const handleQuickAddMemo = async (projectId, memoData) => {
+  // 대시보드에서 빠른 태스크 추가
+  const handleQuickAddTask = async (projectId, taskData) => {
     try {
-      const { data: newMemo, error: memoError } = await supabase
-        .from('memos')
+      const { data: newTask, error: taskError } = await supabase
+        .from('tasks')
         .insert({
           project_id: projectId,
-          title: memoData.title,
+          title: taskData.title,
           user_id: user.id,
           started_at: new Date().toISOString()
         })
         .select()
         .single()
 
-      if (memoError) throw memoError
+      if (taskError) throw taskError
 
-      if (memoData.details.length > 0) {
-        const detailsToInsert = memoData.details.map(d => ({
-          memo_id: newMemo.id,
+      if (taskData.items.length > 0) {
+        const itemsToInsert = taskData.items.map(d => ({
+          task_id: newTask.id,
           content: d.content,
           completed: d.completed,
           completed_at: null,
@@ -509,8 +502,8 @@ function App() {
         }))
 
         const { error: insertError } = await supabase
-          .from('memo_details')
-          .insert(detailsToInsert)
+          .from('task_items')
+          .insert(itemsToInsert)
 
         if (insertError) throw insertError
       }
@@ -518,7 +511,7 @@ function App() {
       await updateProjectTimestamp(projectId)
       await fetchProjects()
     } catch (error) {
-      console.error('빠른 메모 추가 실패:', error)
+      console.error('빠른 태스크 추가 실패:', error)
     }
   }
 
@@ -537,20 +530,19 @@ function App() {
     setActiveView('project')
   }
 
-  // 정리 필요 메모 핸들러
-  const getExpiredMemos = () => {
+  const getExpiredTasks = () => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
-    return projects.flatMap(p => 
-      p.memos.filter(m => {
-        if (!m.started_at) return false
-        const startedAt = new Date(m.started_at)
+
+    return projects.flatMap(p =>
+      p.tasks.filter(t => {
+        if (!t.started_at) return false
+        const startedAt = new Date(t.started_at)
         startedAt.setHours(0, 0, 0, 0)
         const diffDays = Math.floor((today - startedAt) / (1000 * 60 * 60 * 24))
         return diffDays >= 7
-      }).map(m => ({
-        ...m,
+      }).map(t => ({
+        ...t,
         projectName: p.name,
         projectColor: p.color,
         projectId: p.id
@@ -558,64 +550,63 @@ function App() {
     )
   }
 
-  const handleRestartMemo = async (memoId) => {
+  const handleRestartTask = async (taskId) => {
     try {
       const { error } = await supabase
-        .from('memos')
+        .from('tasks')
         .update({ started_at: new Date().toISOString() })
-        .eq('id', memoId)
+        .eq('id', taskId)
 
       if (error) throw error
       await fetchProjects()
     } catch (error) {
-      console.error('메모 리셋 실패:', error)
+      console.error('태스크 리셋 실패:', error)
     }
   }
 
-  const handleCompleteMemo = async (memoId) => {
+  const handleCompleteTask = async (taskId) => {
     try {
-      // 해당 메모의 모든 상세내용을 완료 처리
       const { error } = await supabase
-        .from('memo_details')
-        .update({ 
+        .from('task_items')
+        .update({
           completed: true,
           completed_at: new Date().toISOString()
         })
-        .eq('memo_id', memoId)
+        .eq('task_id', taskId)
 
       if (error) throw error
       await fetchProjects()
     } catch (error) {
-      console.error('메모 완료 처리 실패:', error)
+      console.error('태스크 완료 처리 실패:', error)
     }
   }
 
-  const handleArchiveMemo = async (memoId) => {
+  const handleArchiveTask = async (taskId) => {
     try {
       const { error } = await supabase
-        .from('memos')
+        .from('tasks')
         .update({ archived: true })
-        .eq('id', memoId)
+        .eq('id', taskId)
 
       if (error) throw error
       await fetchProjects()
     } catch (error) {
-      console.error('메모 보관 실패:', error)
+      console.error('태스크 보관 실패:', error)
     }
   }
 
-  const handleRestoreMemo = async (memoId) => {
+  const handleRestoreTask = async (taskId) => {
     try {
       const { error } = await supabase
-        .from('memos')
+        .from('tasks')
         .update({ archived: false })
-        .eq('id', memoId)
+        .eq('id', taskId)
 
       if (error) throw error
       await fetchProjects()
-      setActiveView('archive') // 보관함 새로고침
+      setActiveView('archive')
     } catch (error) {
-      console.error('메모 복원 실패:', error)
+      console.error('태스크 복원 실패:', error)
     }
   }
 
@@ -644,13 +635,12 @@ function App() {
 
       if (error) throw error
       await fetchProjects()
-      setActiveView('archive') // 보관함 새로고침
+      setActiveView('archive')
     } catch (error) {
       console.error('프로젝트 복원 실패:', error)
     }
   }
 
-  // 카테고리 저장
   const handleSaveCategory = async (categoryData) => {
     try {
       if (editingCategory) {
@@ -672,7 +662,7 @@ function App() {
 
         if (error) throw error
       }
-      
+
       await fetchCategories()
       setShowCategoryModal(false)
       setEditingCategory(null)
@@ -681,7 +671,6 @@ function App() {
     }
   }
 
-  // 카테고리 삭제
   const handleDeleteCategory = async (categoryId) => {
     try {
       const { error } = await supabase
@@ -690,7 +679,7 @@ function App() {
         .eq('id', categoryId)
 
       if (error) throw error
-      
+
       await fetchCategories()
       await fetchProjects()
     } catch (error) {
@@ -698,18 +687,15 @@ function App() {
     }
   }
 
-  // 프로젝트 순서/카테고리 변경
   const handleReorderProject = async (projectId, targetProjectId, newCategoryId) => {
     try {
-      // 카테고리만 변경 (헤더에 드롭)
       if (targetProjectId === null) {
-        // 해당 카테고리의 마지막 순서 찾기
         const categoryProjects = projects.filter(p => p.category_id === newCategoryId)
         const maxOrder = categoryProjects.reduce((max, p) => Math.max(max, p.sort_order || 0), -1)
-        
+
         const { error } = await supabase
           .from('projects')
-          .update({ 
+          .update({
             category_id: newCategoryId,
             sort_order: maxOrder + 1
           })
@@ -717,33 +703,24 @@ function App() {
 
         if (error) throw error
       } else {
-        // 순서 변경 로직
         const draggedProject = projects.find(p => p.id === projectId)
-        const targetProject = projects.find(p => p.id === targetProjectId)
-        
-        // 같은 카테고리 내 프로젝트들
         const categoryProjects = projects
           .filter(p => p.category_id === newCategoryId && p.id !== projectId)
           .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-        
-        // 타겟 위치 찾기
+
         const targetIndex = categoryProjects.findIndex(p => p.id === targetProjectId)
-        
-        // 드래그한 프로젝트를 타겟 위치에 삽입
         categoryProjects.splice(targetIndex, 0, { ...draggedProject, category_id: newCategoryId })
-        
-        // 전체 순서 재정렬
+
         const updates = categoryProjects.map((p, index) => ({
           id: p.id,
           sort_order: index,
           category_id: newCategoryId
         }))
-        
-        // 배치 업데이트
+
         for (const update of updates) {
           await supabase
             .from('projects')
-            .update({ 
+            .update({
               sort_order: update.sort_order,
               category_id: update.category_id
             })
@@ -798,30 +775,30 @@ function App() {
           <Dashboard
             projects={projects}
             onSelectProject={selectProject}
-            onAddMemo={handleQuickAddMemo}
+            onAddTask={handleQuickAddTask}
           />
         ) : activeView === 'archive' ? (
           <ArchiveView
             archivedProjects={archivedProjects}
-            archivedMemos={archivedMemos}
+            archivedTasks={archivedTasks}
             onRestoreProject={handleRestoreProject}
             onDeleteProject={handleDeleteProject}
-            onRestoreMemo={handleRestoreMemo}
-            onDeleteMemo={handleDeleteMemo}
+            onRestoreTask={handleRestoreTask}
+            onDeleteTask={handleDeleteTask}
           />
         ) : activeProject ? (
           <ProjectDetail
             project={activeProject}
-            onToggleDetail={handleToggleDetail}
-            onDeleteMemo={(memoId) => handleDeleteMemo(activeProject.id, memoId)}
-            onEditMemo={handleEditMemo}
-            onViewMemo={(memo) => {
-              setViewingMemo(memo)
-              setShowMemoViewModal(true)
+            onToggleItem={handleToggleItem}
+            onDeleteTask={(taskId) => handleDeleteTask(activeProject.id, taskId)}
+            onEditTask={handleEditTask}
+            onViewTask={(task) => {
+              setViewingTask(task)
+              setShowTaskViewModal(true)
             }}
-            onAddMemo={() => {
-              setEditingMemo(null)
-              setShowMemoModal(true)
+            onAddTask={() => {
+              setEditingTask(null)
+              setShowTaskModal(true)
             }}
             onEditInfo={handleEditInfo}
             onDeleteInfo={handleDeleteInfo}
@@ -832,7 +809,7 @@ function App() {
             onEditProject={() => handleEditProject(activeProject)}
             onDeleteProject={() => handleDeleteProject(activeProject.id)}
             onArchiveProject={() => handleArchiveProject(activeProject.id)}
-            onArchiveMemo={handleArchiveMemo}
+            onArchiveTask={handleArchiveTask}
           />
         ) : null}
       </main>
@@ -862,32 +839,32 @@ function App() {
         />
       )}
 
-      {showMemoModal && (
-        <MemoModal
-          memo={editingMemo}
-          onSave={handleSaveMemo}
+      {showTaskModal && (
+        <TaskModal
+          task={editingTask}
+          onSave={handleSaveTask}
           onClose={() => {
-            setShowMemoModal(false)
-            setEditingMemo(null)
+            setShowTaskModal(false)
+            setEditingTask(null)
           }}
-          onArchive={handleArchiveMemo}
+          onArchive={handleArchiveTask}
         />
       )}
 
-      {showMemoViewModal && viewingMemo && (
-        <MemoViewModal
-          memo={viewingMemo}
+      {showTaskViewModal && viewingTask && (
+        <TaskViewModal
+          task={viewingTask}
           onClose={() => {
-            setShowMemoViewModal(false)
-            setViewingMemo(null)
+            setShowTaskViewModal(false)
+            setViewingTask(null)
           }}
-          onEdit={(memo) => {
-            setEditingMemo(memo)
-            setShowMemoModal(true)
+          onEdit={(task) => {
+            setEditingTask(task)
+            setShowTaskModal(true)
           }}
-          onDelete={(memoId) => handleDeleteMemo(activeProjectId, memoId)}
-          onArchive={handleArchiveMemo}
-          onToggleDetail={handleToggleDetail}
+          onDelete={(taskId) => handleDeleteTask(activeProjectId, taskId)}
+          onArchive={handleArchiveTask}
+          onToggleItem={handleToggleItem}
         />
       )}
 

@@ -1,27 +1,26 @@
-import { Plus, Edit2, Trash2, Check, FileText, Copy, ExternalLink, StickyNote, Archive } from 'lucide-react'
+import { Plus, Edit2, Trash2, Check, FileText, Copy, ExternalLink, StickyNote, Archive, User } from 'lucide-react'
 import { useState } from 'react'
 
-function ProjectDetail({ 
-  project, 
-  onToggleDetail,
-  onDeleteMemo, 
-  onEditMemo,
-  onViewMemo,
-  onAddMemo,
+function ProjectDetail({
+  project,
+  onToggleItem,
+  onDeleteTask,
+  onEditTask,
+  onViewTask,
+  onAddTask,
   onEditInfo,
   onDeleteInfo,
   onAddInfo,
-  onEditProject, 
+  onEditProject,
   onDeleteProject,
   onArchiveProject,
-  onArchiveMemo
+  onArchiveTask
 }) {
   const [copiedId, setCopiedId] = useState(null)
-  const [sortOrder, setSortOrder] = useState('newest') // newest, oldest, priority
+  const [sortOrder, setSortOrder] = useState('newest')
 
-  // 삭제 확인
   const handleDeleteProject = () => {
-    if (window.confirm(`"${project.name}" 프로젝트를 삭제할까요?\n모든 메모와 정보가 함께 삭제됩니다.`)) {
+    if (window.confirm(`"${project.name}" 프로젝트를 삭제할까요?\n모든 태스크와 정보가 함께 삭제됩니다.`)) {
       onDeleteProject()
     }
   }
@@ -32,14 +31,13 @@ function ProjectDetail({
     }
   }
 
-  // 상세내용 기준 진행률
-  const totalCount = project.memos.reduce((sum, m) => sum + (m.details?.length || 0), 0)
-  const completedCount = project.memos.reduce((sum, m) => 
-    sum + (m.details?.filter(d => d.completed).length || 0), 0
+  // 항목 기준 진행률
+  const totalCount = project.tasks.reduce((sum, t) => sum + (t.items?.length || 0), 0)
+  const completedCount = project.tasks.reduce((sum, t) =>
+    sum + (t.items?.filter(d => d.completed).length || 0), 0
   )
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
-  // 서클 진행률 계산
   const circleRadius = 50
   const circleCircumference = 2 * Math.PI * circleRadius
   const circleOffset = circleCircumference - (progress / 100) * circleCircumference
@@ -66,8 +64,7 @@ function ProjectDetail({
     window.open(url, '_blank')
   }
 
-  // 정렬
-  const sortedMemos = [...project.memos].sort((a, b) => {
+  const sortedTasks = [...project.tasks].sort((a, b) => {
     switch (sortOrder) {
       case 'oldest':
         return new Date(a.created_at) - new Date(b.created_at)
@@ -84,8 +81,8 @@ function ProjectDetail({
     return (
       <div className="priority-display-sm">
         {[1, 2, 3, 4, 5].map(i => (
-          <span 
-            key={i} 
+          <span
+            key={i}
             className="priority-star-sm"
           >
             {i <= filled ? '★' : '☆'}
@@ -109,8 +106,8 @@ function ProjectDetail({
       <header className="content-header">
         <div className="project-header">
           <div className="project-title-section">
-            <div 
-              className="project-color-large" 
+            <div
+              className="project-color-large"
               style={{ backgroundColor: project.color }}
             />
             <h1 className="content-title">{project.name}</h1>
@@ -136,9 +133,7 @@ function ProjectDetail({
       </header>
 
       <div className="content-body">
-        {/* 진행률 + 프로젝트 인포 2열 그리드 */}
         <div className="progress-info-grid">
-          {/* 좌측: 프로그레스 써클 (1/3) */}
           <div className="progress-circle-card">
             <div className="circle-progress">
               <svg width="120" height="120" viewBox="0 0 120 120">
@@ -148,27 +143,8 @@ function ProjectDetail({
                     <stop offset="100%" stopColor={project.color} />
                   </linearGradient>
                 </defs>
-                <circle
-                  cx="60"
-                  cy="60"
-                  r={circleRadius}
-                  fill="none"
-                  stroke="var(--border)"
-                  strokeWidth="6"
-                />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r={circleRadius}
-                  fill="none"
-                  stroke="url(#progressGradient)"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeDasharray={circleCircumference}
-                  strokeDashoffset={circleOffset}
-                  transform="rotate(-90 60 60)"
-                  style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                />
+                <circle cx="60" cy="60" r={circleRadius} fill="none" stroke="var(--border)" strokeWidth="6" />
+                <circle cx="60" cy="60" r={circleRadius} fill="none" stroke="url(#progressGradient)" strokeWidth="6" strokeLinecap="round" strokeDasharray={circleCircumference} strokeDashoffset={circleOffset} transform="rotate(-90 60 60)" style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
               </svg>
               <div className="circle-progress-text">
                 <span className="circle-progress-value">{progress}</span>
@@ -178,17 +154,16 @@ function ProjectDetail({
             <div className="circle-progress-label">
               {completedCount} / {totalCount} 완료
             </div>
-            {/* 메모별 진행률 */}
-            {project.memos.length > 0 && (
+            {project.tasks.length > 0 && (
               <div className="memo-progress-list">
-                {project.memos.map(memo => {
-                  const memoTotal = memo.details?.length || 0
-                  const memoCompleted = memo.details?.filter(d => d.completed).length || 0
-                  const memoProgress = memoTotal > 0 ? Math.round((memoCompleted / memoTotal) * 100) : 0
+                {project.tasks.map(task => {
+                  const taskTotal = task.items?.length || 0
+                  const taskCompleted = task.items?.filter(d => d.completed).length || 0
+                  const taskProgress = taskTotal > 0 ? Math.round((taskCompleted / taskTotal) * 100) : 0
                   return (
-                    <div key={memo.id} className="memo-progress-row">
-                      <span className="memo-progress-title">{memo.title}</span>
-                      <span className="memo-progress-percent">{memoProgress}%</span>
+                    <div key={task.id} className="memo-progress-row">
+                      <span className="memo-progress-title">{task.title}</span>
+                      <span className="memo-progress-percent">{taskProgress}%</span>
                     </div>
                   )
                 })}
@@ -196,7 +171,6 @@ function ProjectDetail({
             )}
           </div>
 
-          {/* 우측: 프로젝트 인포 (2/3) */}
           <div className="info-card">
             <div className="info-card-header">
               <span className="info-card-title">프로젝트 인포</span>
@@ -218,34 +192,21 @@ function ProjectDetail({
                     </div>
                     <div className="info-actions">
                       {info.type === 'url' ? (
-                        <button 
-                          className="info-action-btn"
-                          onClick={() => handleOpenUrl(info.value)}
-                        >
+                        <button className="info-action-btn" onClick={() => handleOpenUrl(info.value)}>
                           <ExternalLink size={14} strokeWidth={1.2} />
                         </button>
                       ) : (
-                        <button 
+                        <button
                           className={`info-action-btn ${copiedId === info.id ? 'copied' : ''}`}
                           onClick={() => handleCopy(info.id, info.value)}
                         >
-                          {copiedId === info.id ? (
-                            <Check size={14} strokeWidth={1.2} />
-                          ) : (
-                            <Copy size={14} strokeWidth={1.2} />
-                          )}
+                          {copiedId === info.id ? <Check size={14} strokeWidth={1.2} /> : <Copy size={14} strokeWidth={1.2} />}
                         </button>
                       )}
-                      <button 
-                        className="info-action-btn"
-                        onClick={() => onEditInfo(info)}
-                      >
+                      <button className="info-action-btn" onClick={() => onEditInfo(info)}>
                         <Edit2 size={14} strokeWidth={1.2} />
                       </button>
-                      <button 
-                        className="info-action-btn delete"
-                        onClick={() => onDeleteInfo(info.id)}
-                      >
+                      <button className="info-action-btn delete" onClick={() => onDeleteInfo(info.id)}>
                         <Trash2 size={14} strokeWidth={1.2} />
                       </button>
                     </div>
@@ -260,12 +221,12 @@ function ProjectDetail({
           </div>
         </div>
 
-        {/* 메모 섹션 */}
+        {/* 태스크 섹션 */}
         <div className="memo-section">
           <div className="memo-header">
-            <h2 className="memo-title">메모</h2>
+            <h2 className="memo-title">태스크</h2>
             <div className="memo-header-actions">
-              <select 
+              <select
                 className="memo-sort-select"
                 value={sortOrder}
                 onChange={e => setSortOrder(e.target.value)}
@@ -274,58 +235,63 @@ function ProjectDetail({
                 <option value="oldest">오래된순</option>
                 <option value="priority">중요도순</option>
               </select>
-              <button className="btn btn-primary btn-sm" onClick={onAddMemo}>
+              <button className="btn btn-primary btn-sm" onClick={onAddTask}>
                 <Plus size={14} strokeWidth={1.2} />
                 추가
               </button>
             </div>
           </div>
 
-          {sortedMemos.length === 0 ? (
+          {sortedTasks.length === 0 ? (
             <div className="memo-empty">
               <div className="empty-state">
                 <FileText strokeWidth={1.2} />
-                <div className="empty-state-title">메모가 없어요</div>
-                <div className="empty-state-desc">새로운 메모를 추가해보세요</div>
+                <div className="empty-state-title">태스크가 없어요</div>
+                <div className="empty-state-desc">새로운 태스크를 추가해보세요</div>
               </div>
             </div>
           ) : (
             <div className="memo-grid">
-              {sortedMemos.map(memo => {
-                const memoCompleted = memo.details?.length > 0 && 
-                  memo.details.every(d => d.completed)
-                
+              {sortedTasks.map(task => {
+                const taskCompleted = task.items?.length > 0 &&
+                  task.items.every(d => d.completed)
+
                 return (
-                  <div 
-                    key={memo.id} 
-                    className={`memo-card ${memoCompleted ? 'all-completed' : ''}`}
-                    onClick={() => onViewMemo(memo)}
+                  <div
+                    key={task.id}
+                    className={`memo-card ${taskCompleted ? 'all-completed' : ''}`}
+                    onClick={() => onViewTask(task)}
                   >
                     <div className="memo-card-header">
-                      <span className="memo-card-date">{formatDate(memo.created_at)}</span>
-                      <span className="memo-card-title">
-                        {memo.title}
-                      </span>
-                      {renderPriority(memo.priority)}
+                      <span className="memo-card-date">{formatDate(task.created_at)}</span>
+                      <span className="memo-card-title">{task.title}</span>
+                      {renderPriority(task.priority)}
                     </div>
-                    
-                    {memo.details && memo.details.length > 0 && (
+
+                    {task.assignee && (
+                      <div className="task-assignee-row">
+                        <User size={12} strokeWidth={1.2} />
+                        <span>{task.assignee}</span>
+                      </div>
+                    )}
+
+                    {task.items && task.items.length > 0 && (
                       <ul className="memo-card-details">
-                        {memo.details.map((detail) => (
-                          <li 
-                            key={detail.id} 
-                            className={`detail-item-row ${detail.completed ? 'completed' : ''}`}
+                        {task.items.map((item) => (
+                          <li
+                            key={item.id}
+                            className={`detail-item-row ${item.completed ? 'completed' : ''}`}
                           >
-                            <div 
-                              className={`detail-checkbox ${detail.completed ? 'checked' : ''}`}
+                            <div
+                              className={`detail-checkbox ${item.completed ? 'checked' : ''}`}
                               onClick={(e) => {
                                 e.stopPropagation()
-                                onToggleDetail(detail.id, detail.completed)
+                                onToggleItem(item.id, item.completed)
                               }}
                             >
-                              {detail.completed && <Check size={10} strokeWidth={1.2} />}
+                              {item.completed && <Check size={10} strokeWidth={1.2} />}
                             </div>
-                            <span className="detail-content">{detail.content}</span>
+                            <span className="detail-content">{item.content}</span>
                           </li>
                         ))}
                       </ul>

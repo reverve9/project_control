@@ -45,8 +45,8 @@ function Sidebar({
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
 
   const getProjectCounts = (project) => {
-    const totalCount = project.memos.reduce((sum, m) => sum + (m.details?.length || 0), 0)
-    const completedCount = project.memos.reduce((sum, m) => 
+    const totalCount = project.tasks.reduce((sum, m) => sum + (m.details?.length || 0), 0)
+    const completedCount = project.tasks.reduce((sum, m) => 
       sum + (m.details?.filter(d => d.completed).length || 0), 0
     )
     return { totalCount, completedCount }

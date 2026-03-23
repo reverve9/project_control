@@ -41,12 +41,13 @@ CREATE TABLE projects (
 );
 
 -- ============================================
--- memos
+-- tasks (formerly memos)
 -- ============================================
-CREATE TABLE memos (
+CREATE TABLE tasks (
   id         uuid        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id uuid        NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   title      varchar     NOT NULL,
+  assignee   varchar,
   created_at timestamptz          DEFAULT now(),
   updated_at timestamptz          DEFAULT now(),
   user_id    uuid,
@@ -56,11 +57,11 @@ CREATE TABLE memos (
 );
 
 -- ============================================
--- memo_details
+-- task_items (formerly memo_details)
 -- ============================================
-CREATE TABLE memo_details (
+CREATE TABLE task_items (
   id           uuid        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  memo_id      uuid        NOT NULL REFERENCES memos(id) ON DELETE CASCADE,
+  task_id      uuid        NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
   content      text        NOT NULL,
   completed    boolean              DEFAULT false,
   completed_at timestamptz,
@@ -113,14 +114,14 @@ ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can access own projects" ON projects
   FOR ALL USING (auth.uid() = user_id);
 
--- memos: 본인 데이터만 CRUD
-ALTER TABLE memos ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can access own memos" ON memos
+-- tasks: 본인 데이터만 CRUD
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can access own tasks" ON tasks
   FOR ALL USING (auth.uid() = user_id);
 
--- memo_details: 본인 데이터만 CRUD
-ALTER TABLE memo_details ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can access own details" ON memo_details
+-- task_items: 본인 데이터만 CRUD
+ALTER TABLE task_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can access own task items" ON task_items
   FOR ALL USING (auth.uid() = user_id);
 
 -- project_infos: 본인 데이터만 CRUD

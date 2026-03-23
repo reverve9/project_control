@@ -1,44 +1,47 @@
 import { useState, useEffect } from 'react'
 import { Plus, X, Check, Archive } from 'lucide-react'
 
-function MemoModal({ memo, onSave, onClose, onArchive }) {
+function TaskModal({ task, onSave, onClose, onArchive }) {
   const [title, setTitle] = useState('')
+  const [assignee, setAssignee] = useState('')
   const [priority, setPriority] = useState(0)
-  const [details, setDetails] = useState([])
-  const [newDetail, setNewDetail] = useState('')
+  const [items, setItems] = useState([])
+  const [newItem, setNewItem] = useState('')
 
   useEffect(() => {
-    if (memo) {
-      setTitle(memo.title)
-      setPriority(memo.priority || 0)
-      setDetails(memo.details?.map(d => ({
+    if (task) {
+      setTitle(task.title)
+      setAssignee(task.assignee || '')
+      setPriority(task.priority || 0)
+      setItems(task.items?.map(d => ({
         content: d.content,
         completed: d.completed || false,
         completed_at: d.completed_at
       })) || [])
     } else {
       setTitle('')
+      setAssignee('')
       setPriority(0)
-      setDetails([])
+      setItems([])
     }
-  }, [memo])
+  }, [task])
 
-  const handleAddDetail = () => {
-    if (!newDetail.trim()) return
-    setDetails(prev => [...prev, { 
-      content: newDetail.trim(), 
+  const handleAddItem = () => {
+    if (!newItem.trim()) return
+    setItems(prev => [...prev, {
+      content: newItem.trim(),
       completed: false,
       completed_at: null
     }])
-    setNewDetail('')
+    setNewItem('')
   }
 
-  const handleRemoveDetail = (index) => {
-    setDetails(prev => prev.filter((_, i) => i !== index))
+  const handleRemoveItem = (index) => {
+    setItems(prev => prev.filter((_, i) => i !== index))
   }
 
-  const handleToggleDetail = (index) => {
-    setDetails(prev => prev.map((d, i) => {
+  const handleToggleItem = (index) => {
+    setItems(prev => prev.map((d, i) => {
       if (i !== index) return d
       const newCompleted = !d.completed
       return {
@@ -49,8 +52,8 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
     }))
   }
 
-  const handleUpdateDetail = (index, newContent) => {
-    setDetails(prev => prev.map((d, i) => 
+  const handleUpdateItem = (index, newContent) => {
+    setItems(prev => prev.map((d, i) =>
       i === index ? { ...d, content: newContent } : d
     ))
   }
@@ -58,28 +61,28 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
-      handleAddDetail()
+      handleAddItem()
     }
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!title.trim()) return
-    
-    // 빈 내용 필터링
-    const filteredDetails = details.filter(d => d.content.trim())
-    
+
+    const filteredItems = items.filter(d => d.content.trim())
+
     onSave({
       title: title.trim(),
+      assignee: assignee.trim() || null,
       priority,
-      details: filteredDetails
+      items: filteredItems
     })
   }
 
   const handleArchive = () => {
-    if (onArchive && memo) {
-      if (window.confirm(`"${memo.title}" 메모를 보관할까요?`)) {
-        onArchive(memo.id)
+    if (onArchive && task) {
+      if (window.confirm(`"${task.title}" 태스크를 보관할까요?`)) {
+        onArchive(task.id)
         onClose()
       }
     }
@@ -96,7 +99,7 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
       <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">
-            {memo ? '메모 수정' : '새 메모'}
+            {task ? '태스크 수정' : '새 태스크'}
           </h2>
         </div>
 
@@ -109,8 +112,19 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
                 className="form-input"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="메모 제목을 입력하세요"
+                placeholder="태스크 제목을 입력하세요"
                 autoFocus
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">담당자</label>
+              <input
+                type="text"
+                className="form-input"
+                value={assignee}
+                onChange={e => setAssignee(e.target.value)}
+                placeholder="담당자 이름"
               />
             </div>
 
@@ -130,45 +144,45 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">상세내용 추가</label>
+              <label className="form-label">항목 추가</label>
               <div className="detail-input-row">
                 <textarea
                   className="form-input form-textarea-sm"
-                  value={newDetail}
-                  onChange={e => setNewDetail(e.target.value)}
+                  value={newItem}
+                  onChange={e => setNewItem(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="내용 입력 (Shift+Enter: 줄바꿈, Enter: 추가)"
                   rows={2}
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn btn-secondary"
-                  onClick={handleAddDetail}
+                  onClick={handleAddItem}
                 >
                   <Plus size={16} />
                 </button>
               </div>
-              
-              {details.length > 0 && (
+
+              {items.length > 0 && (
                 <ul className="detail-list">
-                  {details.map((detail, index) => (
-                    <li key={index} className={`detail-item ${detail.completed ? 'completed' : ''}`}>
-                      <div 
-                        className={`detail-checkbox ${detail.completed ? 'checked' : ''}`}
-                        onClick={() => handleToggleDetail(index)}
+                  {items.map((item, index) => (
+                    <li key={index} className={`detail-item ${item.completed ? 'completed' : ''}`}>
+                      <div
+                        className={`detail-checkbox ${item.completed ? 'checked' : ''}`}
+                        onClick={() => handleToggleItem(index)}
                       >
-                        {detail.completed && <Check size={10} />}
+                        {item.completed && <Check size={10} />}
                       </div>
                       <textarea
-                        className={`detail-edit-input ${detail.completed ? 'line-through' : ''}`}
-                        value={detail.content}
-                        onChange={e => handleUpdateDetail(index, e.target.value)}
-                        rows={Math.max(1, detail.content.split('\n').length)}
+                        className={`detail-edit-input ${item.completed ? 'line-through' : ''}`}
+                        value={item.content}
+                        onChange={e => handleUpdateItem(index, e.target.value)}
+                        rows={Math.max(1, item.content.split('\n').length)}
                       />
                       <button
                         type="button"
                         className="detail-remove-btn"
-                        onClick={() => handleRemoveDetail(index)}
+                        onClick={() => handleRemoveItem(index)}
                       >
                         <X size={14} />
                       </button>
@@ -180,7 +194,7 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
           </div>
 
           <div className="modal-footer">
-            {memo && (
+            {task && (
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -196,7 +210,7 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
               취소
             </button>
             <button type="submit" className="btn btn-primary" disabled={!title.trim()}>
-              {memo ? '수정' : '추가'}
+              {task ? '수정' : '추가'}
             </button>
           </div>
         </form>
@@ -205,4 +219,4 @@ function MemoModal({ memo, onSave, onClose, onArchive }) {
   )
 }
 
-export default MemoModal
+export default TaskModal

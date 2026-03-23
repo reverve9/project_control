@@ -1,6 +1,6 @@
-import { Check, Edit2, Trash2, Archive, X } from 'lucide-react'
+import { Check, Edit2, Trash2, Archive, X, User } from 'lucide-react'
 
-function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDetail }) {
+function TaskViewModal({ task, onClose, onEdit, onDelete, onArchive, onToggleItem }) {
   const formatDate = (dateStr) => {
     if (!dateStr) return ''
     const date = new Date(dateStr)
@@ -23,15 +23,15 @@ function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDet
   }
 
   const handleDelete = () => {
-    if (window.confirm(`"${memo.title}" 메모를 삭제할까요?`)) {
-      onDelete(memo.id)
+    if (window.confirm(`"${task.title}" 태스크를 삭제할까요?`)) {
+      onDelete(task.id)
       onClose()
     }
   }
 
   const handleArchive = () => {
-    if (window.confirm(`"${memo.title}" 메모를 보관할까요?`)) {
-      onArchive(memo.id)
+    if (window.confirm(`"${task.title}" 태스크를 보관할까요?`)) {
+      onArchive(task.id)
       onClose()
     }
   }
@@ -41,8 +41,8 @@ function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDet
     return (
       <div className="priority-display">
         {[1, 2, 3, 4, 5].map(i => (
-          <span 
-            key={i} 
+          <span
+            key={i}
             className="priority-star"
           >
             {i <= filled ? '★' : '☆'}
@@ -63,8 +63,8 @@ function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDet
       <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <div className="memo-view-header-content">
-            <span className="memo-view-date">{formatDate(memo.created_at)}</span>
-            <h2 className="modal-title">{memo.title}</h2>
+            <span className="memo-view-date">{formatDate(task.created_at)}</span>
+            <h2 className="modal-title">{task.title}</h2>
           </div>
           <button className="modal-close-btn" onClick={onClose}>
             <X size={20} />
@@ -72,29 +72,39 @@ function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDet
         </div>
 
         <div className="modal-body">
+          {task.assignee && (
+            <div className="memo-view-priority">
+              <span className="memo-view-label">담당자</span>
+              <span className="task-assignee-value">
+                <User size={14} strokeWidth={1.2} />
+                {task.assignee}
+              </span>
+            </div>
+          )}
+
           <div className="memo-view-priority">
             <span className="memo-view-label">중요도</span>
-            {renderPriority(memo.priority)}
+            {renderPriority(task.priority)}
           </div>
 
-          {memo.details && memo.details.length > 0 && (
+          {task.items && task.items.length > 0 && (
             <div className="memo-view-details">
-              <span className="memo-view-label">상세내용</span>
+              <span className="memo-view-label">항목</span>
               <ul className="memo-view-detail-list">
-                {memo.details.map((detail) => (
-                  <li 
-                    key={detail.id} 
-                    className={`memo-view-detail-item ${detail.completed ? 'completed' : ''}`}
+                {task.items.map((item) => (
+                  <li
+                    key={item.id}
+                    className={`memo-view-detail-item ${item.completed ? 'completed' : ''}`}
                   >
-                    <div 
-                      className={`detail-checkbox ${detail.completed ? 'checked' : ''}`}
-                      onClick={() => onToggleDetail(detail.id, detail.completed)}
+                    <div
+                      className={`detail-checkbox ${item.completed ? 'checked' : ''}`}
+                      onClick={() => onToggleItem(item.id, item.completed)}
                     >
-                      {detail.completed && <Check size={10} strokeWidth={1.2} />}
+                      {item.completed && <Check size={10} strokeWidth={1.2} />}
                     </div>
-                    <span className="detail-content">{detail.content}</span>
+                    <span className="detail-content">{item.content}</span>
                     <span className="detail-time-ago">
-                      {formatTimeAgo(detail.created_at)}
+                      {formatTimeAgo(item.created_at)}
                     </span>
                   </li>
                 ))}
@@ -113,7 +123,7 @@ function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDet
             삭제
           </button>
           <div style={{ flex: 1 }} />
-          <button className="btn btn-primary" onClick={() => { onEdit(memo); onClose(); }}>
+          <button className="btn btn-primary" onClick={() => { onEdit(task); onClose(); }}>
             <Edit2 size={16} />
             수정
           </button>
@@ -123,4 +133,4 @@ function MemoViewModal({ memo, onClose, onEdit, onDelete, onArchive, onToggleDet
   )
 }
 
-export default MemoViewModal
+export default TaskViewModal
