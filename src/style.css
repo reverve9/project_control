@@ -3022,3 +3022,13 @@ body {
   line-height: 1.5;
   resize: none;
 }
+
+.roadmap-output-content {
+  min-height: 48px;
+  cursor: pointer;
+}
+
+.roadmap-placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
