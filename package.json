@@ -2,51 +2,19 @@
   "name": "project-control",
   "version": "1.0.0",
   "description": "프로젝트 매니저 앱",
-  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "electron": "electron .",
-    "electron:dev": "vite build && electron .",
-    "electron:build": "vite build && electron-builder --mac",
-    "electron:build:win": "vite build && electron-builder --win",
     "start": "vite"
-  },
-  "build": {
-    "appId": "com.ninebridge.projectcontrol",
-    "productName": "Project Control",
-    "directories": {
-      "output": "dist"
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "electron/assets/icon.icns"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "electron/assets/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "STYLE_GUIDE.md"
-    ]
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "electron-store": "^8.1.0",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
-    "electron": "^33.4.11",
-    "electron-builder": "^24.9.1",
     "vite": "^5.0.0"
   }
 }

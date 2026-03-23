@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { X, LogOut, Palette, Users, UserCheck, UserX, Copy, RefreshCw, Shield } from 'lucide-react'
+import { X, LogOut, Users, UserCheck, UserX, Copy, RefreshCw, Shield } from 'lucide-react'
 
 function SettingsPanel({ user, userProfile, onClose, onLogout }) {
   const [activeTab, setActiveTab] = useState('general')
@@ -129,10 +129,6 @@ function SettingsPanel({ user, userProfile, onClose, onLogout }) {
     fetchUsers()
   }
 
-  const handleOpenStyleGuide = () => {
-    window.electronAPI?.openStyleGuide?.()
-  }
-
   return (
     <div className="settings-overlay" onClick={onClose}>
       <div className="settings-panel" onClick={e => e.stopPropagation()}>
@@ -173,13 +169,6 @@ function SettingsPanel({ user, userProfile, onClose, onLogout }) {
                 <span className="settings-label">로그인 계정</span>
                 <span className="settings-value">{user?.email}</span>
               </div>
-
-              {isAdmin && (
-                <button className="settings-item" onClick={handleOpenStyleGuide}>
-                  <Palette size={18} />
-                  <span>스타일 가이드 열기</span>
-                </button>
-              )}
 
               <button className="settings-item danger" onClick={onLogout}>
                 <LogOut size={18} />
