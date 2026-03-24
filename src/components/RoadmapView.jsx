@@ -18,16 +18,22 @@ function RoadmapView({ projectId, user, projectName }) {
   const [cells, setCells] = useState({})
   const [formOpen, setFormOpen] = useState(false)
   const openFlowchartWindow = useCallback(async () => {
-    // 전체 연도 셀 데이터 가져오기
     const rowIds = rows.map(r => r.id)
     if (!rowIds.length) return
+
+    // 먼저 창 열기 (동기 — 팝업 차단 방지)
+    const win = window.open('', '_blank', 'width=1200,height=800')
+    if (!win) return
+    win.document.write('<html><head><title>로딩중...</title></head><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;color:#999">불러오는 중...</body></html>')
+
+    // 전체 연도 셀 데이터 가져오기
 
     const { data: allCellData } = await supabase
       .from('roadmap_cells')
       .select('*')
       .in('row_id', rowIds)
 
-    if (!allCellData || !allCellData.length) return
+    if (!allCellData || !allCellData.length) { win.close(); return }
 
     const allCells = {}
     allCellData.forEach(c => { allCells[`${c.row_id}-${c.year}-${c.month}`] = c })
@@ -62,7 +68,7 @@ function RoadmapView({ projectId, user, projectName }) {
       }
     })
 
-    if (!firstYM) return
+    if (!firstYM) { win.close(); return }
 
     // 시작~끝 연월 리스트 생성
     const timeSlots = []
@@ -200,11 +206,9 @@ function RoadmapView({ projectId, user, projectName }) {
 </div>
 </body></html>`
 
-    const win = window.open('', '_blank', 'width=1200,height=800')
-    if (win) {
-      win.document.write(html)
-      win.document.close()
-    }
+    win.document.open()
+    win.document.write(html)
+    win.document.close()
   }, [rows, projectName])
 
   // 입력 폼
