@@ -95,7 +95,7 @@ function RoadmapView({ projectId, user, projectName }) {
       ).join('<br>')
     }
 
-    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    const esc = (s) => (s || '').replace(/\n/g, ' ').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 
     // 월 라벨 (연도 다르면 연도 표기)
     let prevYear = null
