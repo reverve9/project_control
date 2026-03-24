@@ -175,12 +175,37 @@ function ProjectDetail({
 
           <div className="info-card">
             <div className="info-card-header">
-              <span className="info-card-title">프로젝트 인포</span>
+              <span className="info-card-title">Project Info</span>
               <button className="btn btn-secondary btn-sm" onClick={onAddInfo}>
                 <Plus size={14} strokeWidth={1.2} />
                 추가
               </button>
             </div>
+
+            {(project.assignee || project.deliverable) && (
+              <div className="info-list info-fixed">
+                {project.assignee && (
+                  <div className="info-item">
+                    <div className="info-content">
+                      <span className="info-label">담당자</span>
+                      <div className="info-value-box">
+                        <span className="info-value">{project.assignee}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {project.deliverable && (
+                  <div className="info-item">
+                    <div className="info-content">
+                      <span className="info-label">최종산출물</span>
+                      <div className="info-value-box">
+                        <span className="info-value">{project.deliverable}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {project.infos && project.infos.length > 0 ? (
               <div className="info-list">

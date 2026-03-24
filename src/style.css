@@ -833,6 +833,11 @@ body {
   padding: 8px 0;
 }
 
+.info-list.info-fixed {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
 /* 메모별 진행률 리스트 */
 .memo-progress-list {
   width: 100%;
