@@ -2970,6 +2970,7 @@ body {
 .roadmap-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 12px 16px;
 }
 
@@ -3235,3 +3236,198 @@ tr:hover .roadmap-mini-btn {
 }
 
 .roadmap-th-action { width: 56px; min-width: 56px; }
+
+/* ========================================
+   업무추진 흐름도 (Print View)
+   ======================================== */
+
+.print-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.print-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.print-toolbar-title {
+  font-size: var(--font-14);
+  font-weight: var(--weight-600);
+  color: var(--text-primary);
+}
+
+.print-toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.print-content {
+  flex: 1;
+  overflow: auto;
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.print-page {
+  background: var(--bg-secondary);
+  padding: 40px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border-radius: 4px;
+  width: 297mm;
+  min-height: 210mm;
+}
+
+.print-title {
+  text-align: center;
+  font-size: var(--font-16);
+  font-weight: var(--weight-700);
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.print-table th,
+.print-table td {
+  border: 1px solid #bbb;
+  padding: 4px 6px;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.print-th-label {
+  width: 50px;
+  min-width: 50px;
+  background: var(--bg-primary);
+  font-weight: var(--weight-600);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.print-th-major {
+  background: var(--bg-primary);
+  font-weight: var(--weight-600);
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+.print-th-minor {
+  background: var(--bg-primary);
+  font-weight: var(--weight-500);
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+.print-row-meta td {
+  background: var(--bg-primary);
+}
+
+.print-td-label {
+  background: var(--bg-primary);
+  font-weight: var(--weight-600);
+  text-align: center;
+  white-space: nowrap;
+  width: 50px;
+  min-width: 50px;
+}
+
+.print-td-meta {
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+.print-td-cell {
+  vertical-align: top;
+}
+
+.print-cell-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.print-cell-list li {
+  padding: 1px 0;
+  position: relative;
+  padding-left: 10px;
+}
+
+.print-cell-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--text-secondary);
+}
+
+.print-cell-list li.done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* ========================================
+   @media print — A4 Landscape
+   ======================================== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-overlay,
+  .print-overlay * {
+    visibility: visible;
+  }
+
+  .print-overlay {
+    position: absolute;
+    inset: 0;
+    background: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  .print-content {
+    padding: 0;
+    overflow: visible;
+  }
+
+  .print-page {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  .print-table th,
+  .print-table td {
+    border-color: #333;
+  }
+
+  .print-title {
+    font-size: 14px;
+  }
+}

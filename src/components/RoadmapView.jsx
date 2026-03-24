@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Check, X } from 'lucide-react'
+import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Check, X, Printer } from 'lucide-react'
+import RoadmapPrintView from './RoadmapPrintView'
 
 const QUARTERS = [
   { label: 'Q1', months: [1, 2, 3] },
@@ -11,12 +12,13 @@ const QUARTERS = [
 
 const MONTH_NAMES = ['', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
-function RoadmapView({ projectId, user }) {
+function RoadmapView({ projectId, user, projectName }) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [quarterIndex, setQuarterIndex] = useState(Math.floor(new Date().getMonth() / 3))
   const [rows, setRows] = useState([])
   const [cells, setCells] = useState({})
   const [formOpen, setFormOpen] = useState(false)
+  const [showPrintView, setShowPrintView] = useState(false)
 
   // 입력 폼
   const [formMajor, setFormMajor] = useState('')
@@ -308,6 +310,11 @@ function RoadmapView({ projectId, user }) {
             <span className="roadmap-nav-label">{year}년 {quarter.label}</span>
             <button className="btn btn-ghost btn-sm" onClick={handleNextQuarter}><ChevronRight size={16} /></button>
           </div>
+          {rows.length > 0 && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowPrintView(true)}>
+              <Printer size={14} /> 흐름도
+            </button>
+          )}
         </div>
 
         {rows.length === 0 ? (
@@ -388,6 +395,18 @@ function RoadmapView({ projectId, user }) {
           </div>
         )}
       </div>
+
+      {showPrintView && (
+        <RoadmapPrintView
+          projectName={projectName}
+          year={year}
+          rows={rows}
+          cells={cells}
+          groupedRows={groupedRows}
+          parseCellItems={parseCellItems}
+          onClose={() => setShowPrintView(false)}
+        />
+      )}
     </div>
   )
 }

@@ -151,7 +151,7 @@ function ProjectDetail({
 
       <div className="content-body">
       {activeTab === 'roadmap' ? (
-        <RoadmapView projectId={project.id} user={user} />
+        <RoadmapView projectId={project.id} user={user} projectName={project.name} />
       ) : (
       <>
         <div className="progress-info-grid">
