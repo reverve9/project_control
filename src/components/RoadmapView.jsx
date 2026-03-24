@@ -17,9 +17,21 @@ function RoadmapView({ projectId, user, projectName }) {
   const [rows, setRows] = useState([])
   const [cells, setCells] = useState({})
   const [formOpen, setFormOpen] = useState(false)
-  const openFlowchartWindow = useCallback(() => {
-    const MONTH_LABELS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
-    const allMonths = [1,2,3,4,5,6,7,8,9,10,11,12]
+  const openFlowchartWindow = useCallback(async () => {
+    // 전체 연도 셀 데이터 가져오기
+    const rowIds = rows.map(r => r.id)
+    if (!rowIds.length) return
+
+    const { data: allCellData } = await supabase
+      .from('roadmap_cells')
+      .select('*')
+      .in('row_id', rowIds)
+
+    if (!allCellData || !allCellData.length) return
+
+    const allCells = {}
+    allCellData.forEach(c => { allCells[`${c.row_id}-${c.year}-${c.month}`] = c })
+
     const hasMinorAny = rows.some(r => r.minor)
 
     const grouped = []
@@ -38,27 +50,37 @@ function RoadmapView({ projectId, user, projectName }) {
       catch { return content ? [{ text: content, done: false }] : [] }
     }
 
-    // 데이터 있는 달부터 끝나는 달까지만 표시
-    let firstMonth = 13
-    let lastMonth = 0
-    allMonths.forEach(m => {
-      rows.forEach(r => {
-        const key = `${r.id}-${m}`
-        const cell = cells[key]
-        if (cell) {
-          const items = parseItems(cell.content)
-          if (items.length > 0) {
-            if (m < firstMonth) firstMonth = m
-            if (m > lastMonth) lastMonth = m
-          }
-        }
-      })
+    // 데이터 있는 연월 범위 산출
+    let firstYM = null
+    let lastYM = null
+    allCellData.forEach(c => {
+      const items = parseItems(c.content)
+      if (items.length > 0) {
+        const ym = c.year * 100 + c.month
+        if (!firstYM || ym < firstYM) firstYM = ym
+        if (!lastYM || ym > lastYM) lastYM = ym
+      }
     })
-    const months = firstMonth <= 12 ? allMonths.filter(m => m >= firstMonth && m <= lastMonth) : allMonths
 
-    const getCellHtml = (rowId, month) => {
-      const key = `${rowId}-${month}`
-      const cell = cells[key]
+    if (!firstYM) return
+
+    // 시작~끝 연월 리스트 생성
+    const timeSlots = []
+    const startY = Math.floor(firstYM / 100)
+    const startM = firstYM % 100
+    const endY = Math.floor(lastYM / 100)
+    const endM = lastYM % 100
+    for (let y = startY; y <= endY; y++) {
+      const mFrom = (y === startY) ? startM : 1
+      const mTo = (y === endY) ? endM : 12
+      for (let m = mFrom; m <= mTo; m++) {
+        timeSlots.push({ year: y, month: m })
+      }
+    }
+
+    const getCellHtml = (rowId, y, m) => {
+      const key = `${rowId}-${y}-${m}`
+      const cell = allCells[key]
       if (!cell) return ''
       const items = parseItems(cell.content)
       if (!items.length) return ''
@@ -68,6 +90,12 @@ function RoadmapView({ projectId, user, projectName }) {
     }
 
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+
+    // 월 라벨 (연도 다르면 연도 표기)
+    const makeLabel = (slot) => {
+      const shortY = String(slot.year).slice(2)
+      return `${shortY}년 ${slot.month}월`
+    }
 
     // 헤더 1행: 구분 + 대분류
     let headerRow1 = `<th class="th-label"${hasMinorAny ? ' rowspan="2"' : ''}>구분</th>`
@@ -89,14 +117,17 @@ function RoadmapView({ projectId, user, projectName }) {
       })
     }
 
-    // 산출물 → 담당 순서 (스크린샷 참고)
+    // 산출물 → 담당 순서
     const outputRow = `<tr class="row-meta"><td class="td-label">최종산출물</td>${rows.map(r => `<td class="td-meta">${esc(r.output)}</td>`).join('')}</tr>`
     const assigneeRow = `<tr class="row-meta"><td class="td-label">담당</td>${rows.map(r => `<td class="td-meta">${esc(r.assignee)}</td>`).join('')}</tr>`
 
     // 월별 행
-    const monthRows = months.map(m =>
-      `<tr><td class="td-label">${MONTH_LABELS[m-1]}</td>${rows.map(r => `<td class="td-cell">${getCellHtml(r.id, m)}</td>`).join('')}</tr>`
+    const monthRows = timeSlots.map(slot =>
+      `<tr><td class="td-label">${makeLabel(slot)}</td>${rows.map(r => `<td class="td-cell">${getCellHtml(r.id, slot.year, slot.month)}</td>`).join('')}</tr>`
     ).join('')
+
+    // 타이틀 연도 범위
+    const titleYear = startY === endY ? `${startY}년도` : `${startY}~${endY}년도`
 
     const html = `<!DOCTYPE html>
 <html><head>
@@ -148,7 +179,7 @@ function RoadmapView({ projectId, user, projectName }) {
 </div>
 <div class="content">
   <div class="page">
-    <h2 class="title">${esc(projectName)} — 업무추진 흐름도(${year}년도)</h2>
+    <h2 class="title">${esc(projectName)} — 업무추진 흐름도(${titleYear})</h2>
     <table>
       <thead>
         <tr>${headerRow1}</tr>
@@ -169,7 +200,7 @@ function RoadmapView({ projectId, user, projectName }) {
       win.document.write(html)
       win.document.close()
     }
-  }, [rows, cells, year, projectName])
+  }, [rows, projectName])
 
   // 입력 폼
   const [formMajor, setFormMajor] = useState('')
