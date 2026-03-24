@@ -2977,6 +2977,7 @@ body {
 /* 테이블 */
 .roadmap-table-wrapper {
   overflow-x: auto;
+  overflow-y: visible;
   padding: 0 16px 16px;
 }
 
@@ -3049,6 +3050,8 @@ body {
 .roadmap-td-cell {
   padding: 0;
   cursor: pointer;
+  overflow: visible;
+  position: relative;
 }
 
 .roadmap-td-cell:hover {
@@ -3064,7 +3067,6 @@ body {
 .roadmap-checklist {
   padding: 10px 8px;
   min-height: 72px;
-  overflow: hidden;
 }
 
 
@@ -3085,16 +3087,23 @@ body {
 }
 
 .roadmap-check-box {
-  width: 14px;
-  height: 14px;
-  min-width: 14px;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
   border: 1.5px solid var(--border-light);
   border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-top: 1px;
+  margin-top: 0px;
+  position: relative;
+}
+
+.roadmap-check-box::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
 }
 
 .roadmap-check-box.checked {

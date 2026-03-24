@@ -19,7 +19,7 @@ function RoadmapView({ projectId, user, projectName }) {
   const [formOpen, setFormOpen] = useState(false)
   const openFlowchartWindow = useCallback(() => {
     const MONTH_LABELS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
-    const months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    const allMonths = [1,2,3,4,5,6,7,8,9,10,11,12]
     const hasMinorAny = rows.some(r => r.minor)
 
     const grouped = []
@@ -38,13 +38,27 @@ function RoadmapView({ projectId, user, projectName }) {
       catch { return content ? [{ text: content, done: false }] : [] }
     }
 
+    // 데이터 있는 달부터만 표시
+    let firstMonth = 13
+    allMonths.forEach(m => {
+      rows.forEach(r => {
+        const key = `${r.id}-${m}`
+        const cell = cells[key]
+        if (cell) {
+          const items = parseItems(cell.content)
+          if (items.length > 0 && m < firstMonth) firstMonth = m
+        }
+      })
+    })
+    const months = firstMonth <= 12 ? allMonths.filter(m => m >= firstMonth) : allMonths
+
     const getCellHtml = (rowId, month) => {
       const key = `${rowId}-${month}`
       const cell = cells[key]
       if (!cell) return ''
       const items = parseItems(cell.content)
       if (!items.length) return ''
-      return '<ul class="print-cell-list">' +
+      return '<ul class="cell-list">' +
         items.map(i => `<li class="${i.done ? 'done' : ''}">${i.text}</li>`).join('') +
         '</ul>'
     }
@@ -52,12 +66,12 @@ function RoadmapView({ projectId, user, projectName }) {
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 
     // 헤더 1행: 구분 + 대분류
-    let headerRow1 = `<th class="print-th-label"${hasMinorAny ? ' rowspan="2"' : ''}>구분</th>`
+    let headerRow1 = `<th class="th-label"${hasMinorAny ? ' rowspan="2"' : ''}>구분</th>`
     grouped.forEach(g => {
       const span = g.rows.length
       const noMinor = span === 1 && !g.rows[0].minor
       const rs = !hasMinorAny ? '' : noMinor ? ' rowspan="2"' : ''
-      headerRow1 += `<th class="print-th-major" colspan="${span}"${rs}>${esc(g.major)}</th>`
+      headerRow1 += `<th class="th-major" colspan="${span}"${rs}>${esc(g.major)}</th>`
     })
 
     // 헤더 2행: 소분류
@@ -66,18 +80,18 @@ function RoadmapView({ projectId, user, projectName }) {
       grouped.forEach(g => {
         g.rows.forEach(row => {
           if (g.rows.length === 1 && !row.minor) return
-          headerRow2 += `<th class="print-th-minor">${esc(row.minor)}</th>`
+          headerRow2 += `<th class="th-minor">${esc(row.minor)}</th>`
         })
       })
     }
 
-    // 담당/산출물 행
-    const assigneeRow = `<tr class="print-row-meta"><td class="print-td-label">담당</td>${rows.map(r => `<td class="print-td-meta">${esc(r.assignee)}</td>`).join('')}</tr>`
-    const outputRow = `<tr class="print-row-meta"><td class="print-td-label">산출물</td>${rows.map(r => `<td class="print-td-meta">${esc(r.output)}</td>`).join('')}</tr>`
+    // 산출물 → 담당 순서 (스크린샷 참고)
+    const outputRow = `<tr class="row-meta"><td class="td-label">최종산출물</td>${rows.map(r => `<td class="td-meta">${esc(r.output)}</td>`).join('')}</tr>`
+    const assigneeRow = `<tr class="row-meta"><td class="td-label">담당</td>${rows.map(r => `<td class="td-meta">${esc(r.assignee)}</td>`).join('')}</tr>`
 
     // 월별 행
     const monthRows = months.map(m =>
-      `<tr class="print-row-month"><td class="print-td-label">${MONTH_LABELS[m-1]}</td>${rows.map(r => `<td class="print-td-cell">${getCellHtml(r.id, m)}</td>`).join('')}</tr>`
+      `<tr><td class="td-label">${MONTH_LABELS[m-1]}</td>${rows.map(r => `<td class="td-cell">${getCellHtml(r.id, m)}</td>`).join('')}</tr>`
     ).join('')
 
     const html = `<!DOCTYPE html>
@@ -87,41 +101,42 @@ function RoadmapView({ projectId, user, projectName }) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Pretendard', sans-serif; background: #f8f9fa; color: #2c3e50; }
-  .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: #fff; border-bottom: 1px solid #e0e4e8; }
-  .toolbar-title { font-size: 14px; font-weight: 600; }
-  .toolbar button { padding: 6px 14px; font-size: 13px; font-weight: 500; border: 1px solid #e0e4e8; border-radius: 6px; background: #fff; cursor: pointer; font-family: inherit; }
+  body { font-family: 'Pretendard', sans-serif; background: #f5f5f5; color: #222; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; background: #fff; border-bottom: 1px solid #ddd; }
+  .toolbar-title { font-size: 13px; font-weight: 600; color: #333; }
+  .toolbar button { padding: 5px 14px; font-size: 12px; font-weight: 500; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; font-family: inherit; color: #333; }
   .toolbar button:hover { background: #f0f0f0; }
-  .toolbar .btn-print { background: #2c3e50; color: #fff; border-color: #2c3e50; }
-  .toolbar .btn-print:hover { background: #34495e; }
-  .content { padding: 32px; display: flex; justify-content: center; }
-  .page { background: #fff; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); border-radius: 4px; width: 297mm; min-height: 210mm; }
-  .title { text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; line-height: 1.4; }
-  th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; word-break: break-word; }
-  .print-th-label { width: 50px; min-width: 50px; background: #f8f9fa; font-weight: 600; text-align: center; vertical-align: middle; }
-  .print-th-major { background: #f8f9fa; font-weight: 600; text-align: center; white-space: pre-wrap; }
-  .print-th-minor { background: #f8f9fa; font-weight: 500; text-align: center; white-space: pre-wrap; }
-  .print-row-meta td { background: #f8f9fa; }
-  .print-td-label { background: #f8f9fa; font-weight: 600; text-align: center; white-space: nowrap; width: 50px; min-width: 50px; }
-  .print-td-meta { text-align: center; white-space: pre-wrap; }
-  .print-cell-list { list-style: none; }
-  .print-cell-list li { padding: 1px 0; position: relative; padding-left: 10px; }
-  .print-cell-list li::before { content: '•'; position: absolute; left: 0; color: #7f8c8d; }
-  .print-cell-list li.done { text-decoration: line-through; color: #95a5a6; }
+  .toolbar .btn-print { background: #333; color: #fff; border-color: #333; }
+  .toolbar .btn-print:hover { background: #555; }
+  .content { padding: 28px; display: flex; justify-content: center; }
+  .page { background: #fff; padding: 36px 32px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); width: 100%; max-width: 297mm; min-height: 210mm; }
+  .title { text-align: center; font-size: 15px; font-weight: 700; color: #111; margin-bottom: 18px; letter-spacing: -0.2px; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; line-height: 1.5; }
+  th, td { border: 1px solid #999; padding: 5px 6px; vertical-align: top; word-break: break-word; }
+  .th-label { width: 56px; min-width: 56px; background: #f0f0f0; font-weight: 600; text-align: center; vertical-align: middle; font-size: 9px; }
+  .th-major { background: #f0f0f0; font-weight: 600; text-align: center; white-space: pre-wrap; font-size: 9px; vertical-align: middle; }
+  .th-minor { background: #f5f5f5; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: 8.5px; vertical-align: middle; }
+  .row-meta td { background: #fafafa; }
+  .td-label { background: #f0f0f0; font-weight: 600; text-align: center; white-space: nowrap; width: 56px; min-width: 56px; vertical-align: middle; }
+  .td-meta { text-align: center; white-space: pre-wrap; vertical-align: middle; font-size: 8.5px; }
+  .td-cell { vertical-align: top; background: #fff; }
+  .cell-list { list-style: none; }
+  .cell-list li { padding: 1px 0; position: relative; padding-left: 8px; font-size: 8.5px; }
+  .cell-list li::before { content: '·'; position: absolute; left: 0; color: #666; font-weight: 700; }
+  .cell-list li.done { text-decoration: line-through; color: #bbb; }
   @media print {
     .toolbar { display: none; }
     body { background: white; }
     .content { padding: 0; }
-    .page { box-shadow: none; border-radius: 0; padding: 0; width: 100%; }
+    .page { box-shadow: none; padding: 0; width: 100%; }
     @page { size: A4 landscape; margin: 10mm; }
-    th, td { border-color: #333; }
-    .title { font-size: 14px; }
+    th, td { border-color: #555; }
+    .title { font-size: 13px; }
   }
 </style>
 </head><body>
 <div class="toolbar">
-  <div class="toolbar-title">업무추진 흐름도 미리보기</div>
+  <div class="toolbar-title">업무추진 흐름도</div>
   <div>
     <button class="btn-print" onclick="window.print()">PDF 출력</button>
   </div>
@@ -135,8 +150,8 @@ function RoadmapView({ projectId, user, projectName }) {
         ${hasMinorAny ? `<tr>${headerRow2}</tr>` : ''}
       </thead>
       <tbody>
-        ${assigneeRow}
         ${outputRow}
+        ${assigneeRow}
         ${monthRows}
       </tbody>
     </table>
