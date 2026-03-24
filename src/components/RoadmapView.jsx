@@ -64,7 +64,7 @@ function RoadmapView({ projectId, user, projectName }) {
       if (!items.length) return ''
       return items.map(i =>
         `<span class="${i.done ? 'done' : ''}">${i.text}</span>`
-      ).join(', ')
+      ).join('<br>')
     }
 
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
