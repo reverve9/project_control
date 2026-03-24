@@ -58,9 +58,9 @@ function RoadmapView({ projectId, user, projectName }) {
       if (!cell) return ''
       const items = parseItems(cell.content)
       if (!items.length) return ''
-      return '<ul class="cell-list">' +
-        items.map(i => `<li class="${i.done ? 'done' : ''}">${i.text}</li>`).join('') +
-        '</ul>'
+      return items.map(i =>
+        `<span class="${i.done ? 'done' : ''}">${i.text}</span>`
+      ).join(', ')
     }
 
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -101,37 +101,34 @@ function RoadmapView({ projectId, user, projectName }) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Pretendard', sans-serif; background: #f5f5f5; color: #222; }
+  body { font-family: 'Pretendard', sans-serif; background: #eee; color: #222; }
   .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; background: #fff; border-bottom: 1px solid #ddd; }
   .toolbar-title { font-size: 13px; font-weight: 600; color: #333; }
   .toolbar button { padding: 5px 14px; font-size: 12px; font-weight: 500; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; font-family: inherit; color: #333; }
   .toolbar button:hover { background: #f0f0f0; }
   .toolbar .btn-print { background: #333; color: #fff; border-color: #333; }
   .toolbar .btn-print:hover { background: #555; }
-  .content { padding: 28px; display: flex; justify-content: center; }
-  .page { background: #fff; padding: 36px 32px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); width: 100%; max-width: 297mm; min-height: 210mm; }
-  .title { text-align: center; font-size: 15px; font-weight: 700; color: #111; margin-bottom: 18px; letter-spacing: -0.2px; }
-  table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; line-height: 1.5; }
-  th, td { border: 1px solid #999; padding: 5px 6px; vertical-align: top; word-break: break-word; }
-  .th-label { width: 56px; min-width: 56px; background: #f0f0f0; font-weight: 600; text-align: center; vertical-align: middle; font-size: 9px; }
-  .th-major { background: #f0f0f0; font-weight: 600; text-align: center; white-space: pre-wrap; font-size: 9px; vertical-align: middle; }
-  .th-minor { background: #f5f5f5; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: 8.5px; vertical-align: middle; }
+  .content { padding: 32px; display: flex; justify-content: center; }
+  .page { background: #fff; padding: 48px 40px; box-shadow: 0 1px 8px rgba(0,0,0,0.08); width: 100%; min-height: 210mm; }
+  .title { text-align: center; font-size: 16px; font-weight: 700; color: #111; margin-bottom: 24px; letter-spacing: -0.3px; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; line-height: 1.6; }
+  th, td { border: 1px solid #bbb; padding: 8px 10px; vertical-align: top; word-break: break-word; }
+  .th-label { width: 56px; min-width: 56px; background: #f4f4f4; font-weight: 600; text-align: center; vertical-align: middle; }
+  .th-major { background: #f4f4f4; font-weight: 600; text-align: center; white-space: pre-wrap; vertical-align: middle; }
+  .th-minor { background: #f7f7f7; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: 10px; vertical-align: middle; }
   .row-meta td { background: #fafafa; }
-  .td-label { background: #f0f0f0; font-weight: 600; text-align: center; white-space: nowrap; width: 56px; min-width: 56px; vertical-align: middle; }
-  .td-meta { text-align: center; white-space: pre-wrap; vertical-align: middle; font-size: 8.5px; }
-  .td-cell { vertical-align: top; background: #fff; }
-  .cell-list { list-style: none; }
-  .cell-list li { padding: 1px 0; position: relative; padding-left: 8px; font-size: 8.5px; }
-  .cell-list li::before { content: '·'; position: absolute; left: 0; color: #666; font-weight: 700; }
-  .cell-list li.done { text-decoration: line-through; color: #bbb; }
+  .td-label { background: #f4f4f4; font-weight: 600; text-align: center; white-space: nowrap; width: 56px; min-width: 56px; vertical-align: middle; }
+  .td-meta { text-align: center; white-space: pre-wrap; vertical-align: middle; font-size: 10px; }
+  .td-cell { vertical-align: top; background: #fff; min-height: 36px; }
+  .done { text-decoration: line-through; color: #bbb; }
   @media print {
     .toolbar { display: none; }
     body { background: white; }
     .content { padding: 0; }
-    .page { box-shadow: none; padding: 0; width: 100%; }
+    .page { box-shadow: none; padding: 0; width: 100%; max-width: none; }
     @page { size: A4 landscape; margin: 10mm; }
     th, td { border-color: #555; }
-    .title { font-size: 13px; }
+    .title { font-size: 14px; }
   }
 </style>
 </head><body>
