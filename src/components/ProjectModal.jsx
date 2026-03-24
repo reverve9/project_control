@@ -70,7 +70,7 @@ function ProjectModal({ project, assignments, colors, onSave, onClose }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">과제</label>
+              <label className="form-label">WORX</label>
               <select
                 className="form-input"
                 value={assignmentId}

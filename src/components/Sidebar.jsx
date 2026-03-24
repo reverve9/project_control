@@ -173,9 +173,9 @@ function Sidebar({
             className={`sidebar-section-title clickable ${activeView === 'dashboard' ? 'active' : ''}`}
             onClick={onSelectDashboard}
           >
-            과제
+            WORX
           </span>
-          <button className="sidebar-add-category-btn" onClick={onAddAssignment} title="과제 추가">
+          <button className="sidebar-add-category-btn" onClick={onAddAssignment} title="WORX 추가">
             <FolderPlus size={14} />
           </button>
         </div>

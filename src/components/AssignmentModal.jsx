@@ -52,7 +52,7 @@ function AssignmentModal({ assignment, onSave, onDelete, onClose }) {
   }
 
   const handleDelete = () => {
-    if (assignment && window.confirm(`"${assignment.name}" 과제를 삭제할까요?\n프로젝트는 미분류로 이동됩니다.`)) {
+    if (assignment && window.confirm(`"${assignment.name}" WORX를 삭제할까요?\nProject는 미분류로 이동됩니다.`)) {
       onDelete(assignment.id)
       onClose()
     }
@@ -63,20 +63,20 @@ function AssignmentModal({ assignment, onSave, onDelete, onClose }) {
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">
-            {assignment ? '과제 수정' : '새 과제'}
+            {assignment ? 'WORX 수정' : '새 WORX'}
           </h2>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             <div className="form-group">
-              <label className="form-label">과제 이름</label>
+              <label className="form-label">WORX 이름</label>
               <input
                 type="text"
                 className="form-input"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="과제 이름을 입력하세요"
+                placeholder="WORX 이름을 입력하세요"
                 autoFocus
               />
             </div>

@@ -159,7 +159,7 @@ function AssignmentDetail({ assignment, projects, user, onEditAssignment, onSele
             ) : (
               <div className="empty-state" style={{ marginTop: '60px' }}>
                 <div className="empty-state-title">프로젝트가 없어요</div>
-                <div className="empty-state-desc">이 과제에 프로젝트를 추가해보세요</div>
+                <div className="empty-state-desc">이 WORX에 Project를 추가해보세요</div>
               </div>
             )}
           </>
