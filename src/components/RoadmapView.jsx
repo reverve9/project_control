@@ -92,9 +92,14 @@ function RoadmapView({ projectId, user, projectName }) {
     const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 
     // 월 라벨 (연도 다르면 연도 표기)
+    let prevYear = null
     const makeLabel = (slot) => {
-      const shortY = String(slot.year).slice(2)
-      return `${shortY}년 ${slot.month}월`
+      if (slot.year !== prevYear) {
+        prevYear = slot.year
+        const shortY = String(slot.year).slice(2)
+        return `${shortY}년 ${slot.month}월`
+      }
+      return `${slot.month}월`
     }
 
     // 헤더 1행: 구분 + 대분류
@@ -145,20 +150,20 @@ function RoadmapView({ projectId, user, projectName }) {
   .toolbar .btn-print:hover { background: #555; }
   .content { padding: 32px; display: flex; justify-content: center; }
   .page { background: #fff; padding: 48px 40px; box-shadow: 0 1px 8px rgba(0,0,0,0.08); width: 100%; min-height: 210mm; }
-  .title { text-align: center; font-size: 16px; font-weight: 700; color: #111; margin-bottom: 24px; letter-spacing: -0.3px; }
-  table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; line-height: 1.6; }
-  th, td { border: 0.5px solid #ccc; padding: 8px 10px; vertical-align: top; word-break: break-word; }
+  .title { text-align: center; font-size: clamp(13px, 1.4vw, 18px); font-weight: 700; color: #111; margin-bottom: 24px; letter-spacing: -0.3px; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: clamp(8px, 1vw, 12px); line-height: 1.6; }
+  th, td { border: 0.5px solid #ccc; padding: clamp(4px, 0.6vw, 10px) clamp(5px, 0.8vw, 12px); vertical-align: top; word-break: break-word; }
   tr > th:first-child, tr > td:first-child { border-left: none; }
   tr > th:last-child, tr > td:last-child { border-right: none; }
   thead tr:first-child th { border-top: none; }
   tbody tr:last-child td { border-bottom: none; }
-  .th-label { width: 56px; min-width: 56px; background: #f4f4f4; font-weight: 600; text-align: center; vertical-align: middle; }
+  .th-label { width: clamp(40px, 5vw, 60px); min-width: 40px; background: #f4f4f4; font-weight: 600; text-align: center; vertical-align: middle; }
   .th-major { background: #f4f4f4; font-weight: 600; text-align: center; white-space: pre-wrap; vertical-align: middle; }
-  .th-minor { background: #f7f7f7; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: 10px; vertical-align: middle; }
+  .th-minor { background: #f7f7f7; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: clamp(7px, 0.9vw, 11px); vertical-align: middle; }
   .row-meta td { background: #fafafa; }
-  .td-label { background: #f4f4f4; font-weight: 600; text-align: center; white-space: nowrap; width: 56px; min-width: 56px; vertical-align: middle; }
-  .td-meta { text-align: center; white-space: pre-wrap; vertical-align: middle; font-size: 10px; }
-  .td-cell { vertical-align: top; background: #fff; min-height: 36px; }
+  .td-label { background: #f4f4f4; font-weight: 600; text-align: center; white-space: nowrap; width: clamp(40px, 5vw, 60px); min-width: 40px; vertical-align: middle; }
+  .td-meta { text-align: center; white-space: pre-wrap; vertical-align: middle; font-size: clamp(7px, 0.9vw, 11px); }
+  .td-cell { vertical-align: top; background: #fff; }
   .done { text-decoration: line-through; color: #bbb; }
   @media print {
     .toolbar { display: none; }
