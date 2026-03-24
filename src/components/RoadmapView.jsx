@@ -158,18 +158,19 @@ function RoadmapView({ projectId, user, projectName }) {
   .page { background: #fff; padding: 48px 40px; box-shadow: 0 1px 8px rgba(0,0,0,0.08); width: 100%; min-height: 210mm; }
   .title { text-align: center; font-size: clamp(13px, 1.4vw, 18px); font-weight: 700; color: #111; margin-bottom: 24px; letter-spacing: -0.3px; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: clamp(8px, 1vw, 12px); line-height: 1.6; }
-  th, td { border: 0.5px solid #ccc; padding: clamp(4px, 0.6vw, 10px) clamp(5px, 0.8vw, 12px); vertical-align: top; word-break: keep-all; overflow-wrap: break-word; }
+  th, td { border: 0.5px solid #ccc; padding: clamp(6px, 0.8vw, 12px) clamp(5px, 0.8vw, 12px); vertical-align: top; word-break: keep-all; overflow-wrap: break-word; }
+  tr > th:first-child, tr > td:first-child { border-left: 0.5px solid #eee; }
   tr > th:last-child, tr > td:last-child { border-right: none; }
   thead tr:first-child th { border-top: 2px solid #000; }
   tbody tr:last-child td { border-bottom: 2px solid #000; }
-  .th-label, .td-label { border-right: 1px solid #000; }
+  .th-label, .td-label { border-right: 1px solid #000; border-left: none; }
   .row-assignee td { border-bottom: 1px solid #000; }
-  .th-label { width: clamp(52px, 5.5vw, 72px); min-width: 52px; background: #f4f4f4; font-weight: 600; text-align: center; vertical-align: middle; }
-  .th-major { background: #f4f4f4; font-weight: 600; text-align: center; white-space: pre-wrap; vertical-align: middle; }
-  .th-minor { background: #f7f7f7; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: clamp(7px, 0.9vw, 11px); vertical-align: middle; }
-  .row-meta td { background: #fafafa; }
-  .td-label { background: #f4f4f4; font-weight: 600; text-align: center; width: clamp(52px, 5.5vw, 72px); min-width: 52px; vertical-align: middle; }
-  .td-meta { text-align: center; white-space: pre-wrap; vertical-align: middle; font-size: clamp(7px, 0.9vw, 11px); }
+  .th-label { width: clamp(68px, 7vw, 88px); min-width: 68px; background: #f0f0f0; font-weight: 600; text-align: center; vertical-align: middle; white-space: nowrap; }
+  .th-major { background: #f0f0f0; font-weight: 600; text-align: center; white-space: pre-wrap; vertical-align: middle; }
+  .th-minor { background: #f0f0f0; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: clamp(7px, 0.9vw, 11px); vertical-align: middle; }
+  .row-meta td { background: #f0f0f0; }
+  .td-label { background: #f0f0f0; font-weight: 600; text-align: center; width: clamp(68px, 7vw, 88px); min-width: 68px; vertical-align: middle; white-space: nowrap; }
+  .td-meta { text-align: center; white-space: pre-wrap; vertical-align: middle; font-size: clamp(7px, 0.9vw, 11px); background: #f0f0f0; }
   .td-cell { vertical-align: top; background: #fff; }
   .done { text-decoration: line-through; color: #bbb; }
   @media print {
