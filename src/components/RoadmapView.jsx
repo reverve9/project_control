@@ -158,7 +158,7 @@ function RoadmapView({ projectId, user, projectName }) {
   .page { background: #fff; padding: 48px 40px; box-shadow: 0 1px 8px rgba(0,0,0,0.08); width: 100%; min-height: 210mm; }
   .title { text-align: center; font-size: clamp(13px, 1.4vw, 18px); font-weight: 700; color: #111; margin-bottom: 24px; letter-spacing: -0.3px; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: clamp(8px, 1vw, 12px); line-height: 1.6; }
-  th, td { border: 0.5px solid #ccc; padding: clamp(4px, 0.6vw, 10px) clamp(5px, 0.8vw, 12px); vertical-align: top; word-break: break-word; }
+  th, td { border: 0.5px solid #ccc; padding: clamp(4px, 0.6vw, 10px) clamp(5px, 0.8vw, 12px); vertical-align: top; word-break: keep-all; overflow-wrap: break-word; }
   tr > th:first-child, tr > td:first-child { border-left: none; }
   tr > th:last-child, tr > td:last-child { border-right: none; }
   thead tr:first-child th { border-top: none; }
