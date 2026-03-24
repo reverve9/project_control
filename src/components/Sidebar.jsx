@@ -173,7 +173,7 @@ function Sidebar({
             className={`sidebar-section-title clickable ${activeView === 'dashboard' ? 'active' : ''}`}
             onClick={onSelectDashboard}
           >
-            프로젝트
+            과제
           </span>
           <button className="sidebar-add-category-btn" onClick={onAddAssignment} title="과제 추가">
             <FolderPlus size={14} />
