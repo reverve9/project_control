@@ -815,7 +815,6 @@ function App() {
         ) : activeView === 'assignment' && activeAssignment ? (
           <AssignmentDetail
             assignment={activeAssignment}
-            assignments={assignments}
             projects={projects}
             user={user}
             onSelectProject={selectProject}

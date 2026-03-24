@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Edit2, Check, User } from 'lucide-react'
 import RoadmapView from './RoadmapView'
 
-function AssignmentDetail({ assignment, assignments, projects, user, onEditAssignment, onSelectProject }) {
+function AssignmentDetail({ assignment, projects, user, onEditAssignment, onSelectProject }) {
   const [activeTab, setActiveTab] = useState('dashboard')
 
   const assignmentProjects = projects.filter(p => p.assignment_id === assignment.id)
@@ -11,17 +11,15 @@ function AssignmentDetail({ assignment, assignments, projects, user, onEditAssig
   const priorityLabel = { low: '낮음', medium: '보통', high: '높음' }
 
   // 통계
-  const totalWorx = assignments.length
   const totalProjects = assignmentProjects.length
-  const totalItems = assignmentProjects.reduce((sum, p) =>
-    sum + p.tasks.reduce((tSum, t) => tSum + (t.items?.length || 0), 0), 0
+  const totalTasks = assignmentProjects.reduce((sum, p) => sum + p.tasks.length, 0)
+  const completedTasks = assignmentProjects.reduce((sum, p) =>
+    sum + p.tasks.filter(t => {
+      const items = t.items || []
+      return items.length > 0 && items.every(d => d.completed)
+    }).length, 0
   )
-  const completedItems = assignmentProjects.reduce((sum, p) =>
-    sum + p.tasks.reduce((tSum, t) =>
-      tSum + (t.items?.filter(d => d.completed).length || 0), 0
-    ), 0
-  )
-  const pendingItems = totalItems - completedItems
+  const pendingTasks = totalTasks - completedTasks
 
   return (
     <>
@@ -76,20 +74,20 @@ function AssignmentDetail({ assignment, assignments, projects, user, onEditAssig
           <>
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-label">전체 WORX</div>
-                <div className="stat-value">{totalWorx}</div>
-              </div>
-              <div className="stat-card">
                 <div className="stat-label">전체 Project</div>
                 <div className="stat-value">{totalProjects}</div>
               </div>
               <div className="stat-card">
+                <div className="stat-label">전체 Task</div>
+                <div className="stat-value">{totalTasks}</div>
+              </div>
+              <div className="stat-card">
                 <div className="stat-label">완료됨</div>
-                <div className="stat-value success">{completedItems}</div>
+                <div className="stat-value success">{completedTasks}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-label">진행중</div>
-                <div className="stat-value warning">{pendingItems}</div>
+                <div className="stat-value warning">{pendingTasks}</div>
               </div>
             </div>
 
