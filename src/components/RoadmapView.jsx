@@ -38,19 +38,23 @@ function RoadmapView({ projectId, user, projectName }) {
       catch { return content ? [{ text: content, done: false }] : [] }
     }
 
-    // 데이터 있는 달부터만 표시
+    // 데이터 있는 달부터 끝나는 달까지만 표시
     let firstMonth = 13
+    let lastMonth = 0
     allMonths.forEach(m => {
       rows.forEach(r => {
         const key = `${r.id}-${m}`
         const cell = cells[key]
         if (cell) {
           const items = parseItems(cell.content)
-          if (items.length > 0 && m < firstMonth) firstMonth = m
+          if (items.length > 0) {
+            if (m < firstMonth) firstMonth = m
+            if (m > lastMonth) lastMonth = m
+          }
         }
       })
     })
-    const months = firstMonth <= 12 ? allMonths.filter(m => m >= firstMonth) : allMonths
+    const months = firstMonth <= 12 ? allMonths.filter(m => m >= firstMonth && m <= lastMonth) : allMonths
 
     const getCellHtml = (rowId, month) => {
       const key = `${rowId}-${month}`
