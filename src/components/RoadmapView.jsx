@@ -348,10 +348,11 @@ function RoadmapView({ projectId, user }) {
                       const isEditing = editingCell === key
 
                       return (
-                        <td key={m} className="roadmap-td-cell">
+                        <td key={m} className="roadmap-td-cell"
+                          onClick={() => { if (!isEditing) { setEditingCell(key); setEditingCellValue('') } }}>
                           <div className="roadmap-checklist">
                             {items.map((item, idx) => (
-                              <div key={idx} className={`roadmap-check-item ${item.done ? 'done' : ''}`}>
+                              <div key={idx} className={`roadmap-check-item ${item.done ? 'done' : ''}`} onClick={e => e.stopPropagation()}>
                                 <div
                                   className={`roadmap-check-box ${item.done ? 'checked' : ''}`}
                                   onClick={() => handleToggleCellItem(row.id, m, idx)}
@@ -365,16 +366,15 @@ function RoadmapView({ projectId, user }) {
                                 </button>
                               </div>
                             ))}
-                            {isEditing ? (
+                            {isEditing && (
                               <textarea className="roadmap-check-input" value={editingCellValue}
                                 onChange={e => setEditingCellValue(e.target.value)}
                                 onKeyDown={e => handleCellInputKeyDown(e, row.id, m)}
                                 onBlur={() => { if (!editingCellValue.trim()) { setEditingCell(null) } }}
+                                onClick={e => e.stopPropagation()}
                                 placeholder="Enter: 추가 / Shift+Enter: 줄바꿈"
                                 rows={1}
                                 autoFocus />
-                            ) : (
-                              <div className="roadmap-check-empty" onClick={() => { setEditingCell(key); setEditingCellValue('') }} />
                             )}
                           </div>
                         </td>
