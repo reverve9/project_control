@@ -262,6 +262,23 @@ function RoadmapView({ projectId, user }) {
                 <Plus size={14} /> 추가
               </button>
             </div>
+            {rows.length > 0 && (
+              <div className="roadmap-row-list">
+                {rows.map((row, idx) => (
+                  <div key={row.id} className="roadmap-row-item">
+                    <span className="roadmap-row-item-num">{idx + 1}</span>
+                    <span className="roadmap-row-item-major">{row.major}</span>
+                    {row.minor && <span className="roadmap-row-item-minor">{row.minor}</span>}
+                    {row.assignee && <span className="roadmap-row-item-assignee">{row.assignee}</span>}
+                    <div className="roadmap-row-item-actions">
+                      <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'up')} disabled={idx === 0}><ArrowUp size={11} /></button>
+                      <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'down')} disabled={idx === rows.length - 1}><ArrowDown size={11} /></button>
+                      <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)}><Trash2 size={11} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -292,7 +309,6 @@ function RoadmapView({ projectId, user }) {
                 {quarter.months.map(m => (
                   <th key={m} className="roadmap-th-month">{MONTH_NAMES[m]}</th>
                 ))}
-                <th className="roadmap-th-action"></th>
               </tr>
             </thead>
             <tbody>
@@ -347,13 +363,6 @@ function RoadmapView({ projectId, user }) {
                         </td>
                       )
                     })}
-                    <td className="roadmap-td-action">
-                      <div className="roadmap-action-group">
-                        <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'up')}><ArrowUp size={11} /></button>
-                        <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'down')}><ArrowDown size={11} /></button>
-                        <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)}><Trash2 size={11} /></button>
-                      </div>
-                    </td>
                   </tr>
                 ))
               })}
