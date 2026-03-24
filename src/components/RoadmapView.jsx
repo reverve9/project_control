@@ -112,7 +112,11 @@ function RoadmapView({ projectId, user, projectName }) {
   .page { background: #fff; padding: 48px 40px; box-shadow: 0 1px 8px rgba(0,0,0,0.08); width: 100%; min-height: 210mm; }
   .title { text-align: center; font-size: 16px; font-weight: 700; color: #111; margin-bottom: 24px; letter-spacing: -0.3px; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; line-height: 1.6; }
-  th, td { border: 1px solid #bbb; padding: 8px 10px; vertical-align: top; word-break: break-word; }
+  th, td { border: 0.5px solid #ccc; padding: 8px 10px; vertical-align: top; word-break: break-word; }
+  tr > th:first-child, tr > td:first-child { border-left: none; }
+  tr > th:last-child, tr > td:last-child { border-right: none; }
+  thead tr:first-child th { border-top: none; }
+  tbody tr:last-child td { border-bottom: none; }
   .th-label { width: 56px; min-width: 56px; background: #f4f4f4; font-weight: 600; text-align: center; vertical-align: middle; }
   .th-major { background: #f4f4f4; font-weight: 600; text-align: center; white-space: pre-wrap; vertical-align: middle; }
   .th-minor { background: #f7f7f7; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: 10px; vertical-align: middle; }
@@ -127,7 +131,7 @@ function RoadmapView({ projectId, user, projectName }) {
     .content { padding: 0; }
     .page { box-shadow: none; padding: 0; width: 100%; max-width: none; }
     @page { size: A4 landscape; margin: 10mm; }
-    th, td { border-color: #555; }
+    th, td { border-color: #999; }
     .title { font-size: 14px; }
   }
 </style>
