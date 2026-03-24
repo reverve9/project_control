@@ -1,11 +1,8 @@
 import { Check, User } from 'lucide-react'
 
-function Dashboard({ projects, onSelectProject }) {
+function Dashboard({ assignments, projects, onSelectProject }) {
+  const totalWorx = assignments.length
   const totalProjects = projects.length
-
-  const totalItems = projects.reduce((sum, p) =>
-    sum + p.tasks.reduce((tSum, t) => tSum + (t.items?.length || 0), 0), 0
-  )
 
   const completedItems = projects.reduce((sum, p) =>
     sum + p.tasks.reduce((tSum, t) =>
@@ -13,24 +10,28 @@ function Dashboard({ projects, onSelectProject }) {
     ), 0
   )
 
+  const totalItems = projects.reduce((sum, p) =>
+    sum + p.tasks.reduce((tSum, t) => tSum + (t.items?.length || 0), 0), 0
+  )
+
   const pendingItems = totalItems - completedItems
 
   return (
     <>
       <header className="content-header">
-        <h1 className="content-title">대시보드</h1>
-        <p className="content-subtitle">전체 프로젝트 현황을 한눈에 확인하세요</p>
+        <h1 className="content-title">Dashboard</h1>
+        <p className="content-subtitle">전체 현황을 한눈에 확인하세요</p>
       </header>
 
       <div className="content-body">
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-label">전체 프로젝트</div>
-            <div className="stat-value">{totalProjects}</div>
+            <div className="stat-label">전체 WORX</div>
+            <div className="stat-value">{totalWorx}</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">전체 항목</div>
-            <div className="stat-value">{totalItems}</div>
+            <div className="stat-label">전체 Project</div>
+            <div className="stat-value">{totalProjects}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">완료됨</div>
@@ -42,9 +43,8 @@ function Dashboard({ projects, onSelectProject }) {
           </div>
         </div>
 
-        {/* 프로젝트 칸반 보드 (메이슨리) */}
         {projects.length > 0 ? (
-          <div className="kanban-masonry">
+          <div className="kanban-grid">
             {projects.filter(p => p.tasks.length > 0).map(project => {
               const total = project.tasks.reduce((sum, t) => sum + (t.items?.length || 0), 0)
               const completed = project.tasks.reduce((sum, t) =>
@@ -109,8 +109,8 @@ function Dashboard({ projects, onSelectProject }) {
           </div>
         ) : (
           <div className="empty-state" style={{ marginTop: '60px' }}>
-            <div className="empty-state-title">프로젝트가 없어요</div>
-            <div className="empty-state-desc">새 프로젝트를 만들어보세요</div>
+            <div className="empty-state-title">Project가 없어요</div>
+            <div className="empty-state-desc">새 Project를 만들어보세요</div>
           </div>
         )}
       </div>

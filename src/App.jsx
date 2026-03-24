@@ -799,6 +799,7 @@ function App() {
       <main className="main-content">
         {activeView === 'dashboard' ? (
           <Dashboard
+            assignments={assignments}
             projects={projects}
             onSelectProject={selectProject}
           />
