@@ -115,6 +115,14 @@ function RoadmapView({ projectId, user }) {
     await fetchData()
   }
 
+  // 행 목록 인라인 수정 (blur 시 저장)
+  const handleRowFieldBlur = async (id, field, value) => {
+    await supabase.from('roadmap_rows')
+      .update({ [field]: value.trim() || null })
+      .eq('id', id)
+    await fetchData()
+  }
+
   // 필드 인라인 수정
   const handleStartFieldEdit = (id, field, value) => {
     setEditingField({ id, field })
@@ -270,9 +278,15 @@ function RoadmapView({ projectId, user }) {
                 {rows.map((row, idx) => (
                   <div key={row.id} className="roadmap-row-item">
                     <span className="roadmap-row-item-num">{idx + 1}</span>
-                    <span className="roadmap-row-item-major">{row.major.split('\n')[0]}</span>
-                    {row.minor && <span className="roadmap-row-item-minor">{row.minor.split('\n')[0]}</span>}
-                    {row.assignee && <span className="roadmap-row-item-assignee">{row.assignee.split('\n')[0]}</span>}
+                    <input className="roadmap-form-input major" defaultValue={row.major}
+                      onBlur={e => handleRowFieldBlur(row.id, 'major', e.target.value)}
+                      placeholder="업무 (대분류)" />
+                    <input className="roadmap-form-input" defaultValue={row.minor || ''}
+                      onBlur={e => handleRowFieldBlur(row.id, 'minor', e.target.value)}
+                      placeholder="업무 (소분류)" />
+                    <input className="roadmap-form-input" defaultValue={row.assignee || ''}
+                      onBlur={e => handleRowFieldBlur(row.id, 'assignee', e.target.value)}
+                      placeholder="담당자" />
                     <div className="roadmap-row-item-actions">
                       <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'up')} disabled={idx === 0}><ArrowUp size={11} /></button>
                       <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'down')} disabled={idx === rows.length - 1}><ArrowDown size={11} /></button>
@@ -307,8 +321,8 @@ function RoadmapView({ projectId, user }) {
             <thead>
               <tr>
                 <th className="roadmap-th-major" colSpan={2}>업무</th>
-                <th className="roadmap-th-assignee">담당</th>
                 <th className="roadmap-th-output">산출물</th>
+                <th className="roadmap-th-assignee">담당</th>
                 {quarter.months.map(m => (
                   <th key={m} className="roadmap-th-month">{MONTH_NAMES[m]}</th>
                 ))}
@@ -325,8 +339,8 @@ function RoadmapView({ projectId, user }) {
                       </td>
                     )}
                     {hasMinor && <td className="roadmap-td-minor">{renderField(row, 'minor')}</td>}
-                    <td className="roadmap-td-assignee">{renderField(row, 'assignee')}</td>
                     <td className="roadmap-td-output">{renderField(row, 'output')}</td>
+                    <td className="roadmap-td-assignee">{renderField(row, 'assignee')}</td>
                     {quarter.months.map(m => {
                       const key = getCellKey(row.id, m)
                       const cell = cells[key]

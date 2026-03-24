@@ -2937,14 +2937,6 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 8px;
-  border-radius: 5px;
-  font-size: 12px;
-  color: var(--text-primary);
-}
-
-.roadmap-row-item:hover {
-  background: var(--bg-primary);
 }
 
 .roadmap-row-item-num {
@@ -2952,39 +2944,14 @@ body {
   color: var(--text-tertiary);
   min-width: 16px;
   text-align: center;
-}
-
-.roadmap-row-item-major {
-  font-weight: var(--weight-600);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.roadmap-row-item-minor {
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.roadmap-row-item-assignee {
-  color: var(--text-tertiary);
-  font-size: 11px;
-  white-space: nowrap;
-  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .roadmap-row-item-actions {
   display: flex;
   align-items: center;
   gap: 2px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.roadmap-row-item:hover .roadmap-row-item-actions {
-  opacity: 1;
+  flex-shrink: 0;
 }
 
 .roadmap-row-item-actions .roadmap-mini-btn:disabled {
@@ -3039,6 +3006,7 @@ body {
   font-size: var(--font-12);
   font-weight: var(--weight-600);
   color: var(--text-primary);
+  background: var(--bg-primary);
   vertical-align: top;
   text-align: center;
   background: var(--bg-primary);
@@ -3050,6 +3018,7 @@ body {
   font-size: var(--font-12);
   color: var(--text-primary);
   text-align: center;
+  background: var(--bg-primary);
 }
 
 .roadmap-td-output {
@@ -3057,6 +3026,7 @@ body {
   font-size: var(--font-12);
   color: var(--text-primary);
   text-align: center;
+  background: var(--bg-primary);
 }
 
 .roadmap-td-cell {
