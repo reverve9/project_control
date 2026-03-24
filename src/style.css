@@ -2124,6 +2124,13 @@ body {
   column-gap: 16px;
 }
 
+/* 칸반 그리드 */
+.kanban-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
 .kanban-card {
   break-inside: avoid;
   background: var(--bg-secondary);
