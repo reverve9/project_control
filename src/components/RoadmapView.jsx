@@ -163,11 +163,11 @@ function RoadmapView({ projectId, user, projectName }) {
   tr > th:last-child, tr > td:last-child { border-right: none; }
   thead tr:first-child th { border-top: none; }
   tbody tr:last-child td { border-bottom: none; }
-  .th-label { width: clamp(40px, 5vw, 60px); min-width: 40px; background: #f4f4f4; font-weight: 600; text-align: center; vertical-align: middle; }
+  .th-label { width: clamp(52px, 5.5vw, 72px); min-width: 52px; background: #f4f4f4; font-weight: 600; text-align: center; vertical-align: middle; }
   .th-major { background: #f4f4f4; font-weight: 600; text-align: center; white-space: pre-wrap; vertical-align: middle; }
   .th-minor { background: #f7f7f7; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: clamp(7px, 0.9vw, 11px); vertical-align: middle; }
   .row-meta td { background: #fafafa; }
-  .td-label { background: #f4f4f4; font-weight: 600; text-align: center; white-space: nowrap; width: clamp(40px, 5vw, 60px); min-width: 40px; vertical-align: middle; }
+  .td-label { background: #f4f4f4; font-weight: 600; text-align: center; width: clamp(52px, 5.5vw, 72px); min-width: 52px; vertical-align: middle; }
   .td-meta { text-align: center; white-space: pre-wrap; vertical-align: middle; font-size: clamp(7px, 0.9vw, 11px); }
   .td-cell { vertical-align: top; background: #fff; }
   .done { text-decoration: line-through; color: #bbb; }
