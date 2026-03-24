@@ -130,7 +130,7 @@ function RoadmapView({ projectId, user, projectName }) {
 
     // 산출물 → 담당 순서
     const outputRow = `<tr class="row-meta"><td class="td-label">최종산출물</td>${rows.map(r => `<td class="td-meta">${esc(r.output)}</td>`).join('')}</tr>`
-    const assigneeRow = `<tr class="row-meta"><td class="td-label">담당</td>${rows.map(r => `<td class="td-meta">${esc(r.assignee)}</td>`).join('')}</tr>`
+    const assigneeRow = `<tr class="row-meta row-assignee"><td class="td-label">담당</td>${rows.map(r => `<td class="td-meta">${esc(r.assignee)}</td>`).join('')}</tr>`
 
     // 월별 행
     const monthRows = timeSlots.map(slot =>
@@ -159,10 +159,11 @@ function RoadmapView({ projectId, user, projectName }) {
   .title { text-align: center; font-size: clamp(13px, 1.4vw, 18px); font-weight: 700; color: #111; margin-bottom: 24px; letter-spacing: -0.3px; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: clamp(8px, 1vw, 12px); line-height: 1.6; }
   th, td { border: 0.5px solid #ccc; padding: clamp(4px, 0.6vw, 10px) clamp(5px, 0.8vw, 12px); vertical-align: top; word-break: keep-all; overflow-wrap: break-word; }
-  tr > th:first-child, tr > td:first-child { border-left: none; }
   tr > th:last-child, tr > td:last-child { border-right: none; }
-  thead tr:first-child th { border-top: none; }
-  tbody tr:last-child td { border-bottom: none; }
+  thead tr:first-child th { border-top: 2px solid #000; }
+  tbody tr:last-child td { border-bottom: 2px solid #000; }
+  .th-label, .td-label { border-right: 1px solid #000; }
+  .row-assignee td { border-bottom: 1px solid #000; }
   .th-label { width: clamp(52px, 5.5vw, 72px); min-width: 52px; background: #f4f4f4; font-weight: 600; text-align: center; vertical-align: middle; }
   .th-major { background: #f4f4f4; font-weight: 600; text-align: center; white-space: pre-wrap; vertical-align: middle; }
   .th-minor { background: #f7f7f7; font-weight: 500; text-align: center; white-space: pre-wrap; font-size: clamp(7px, 0.9vw, 11px); vertical-align: middle; }
