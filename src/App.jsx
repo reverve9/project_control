@@ -801,7 +801,7 @@ function App() {
           <Dashboard
             assignments={assignments}
             projects={projects}
-            onSelectProject={selectProject}
+            onSelectAssignment={selectAssignment}
           />
         ) : activeView === 'archive' ? (
           <ArchiveView
