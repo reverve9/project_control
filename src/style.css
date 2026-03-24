@@ -2976,6 +2976,7 @@ body {
 /* 테이블 */
 .roadmap-table-wrapper {
   overflow-x: auto;
+  padding: 0 16px 16px;
 }
 
 .roadmap-table {
@@ -2992,7 +2993,7 @@ body {
 }
 
 .roadmap-table thead th {
-  padding: 7px 8px;
+  padding: 10px 8px;
   font-size: 10px;
   font-weight: var(--weight-600);
   color: var(--text-muted);
@@ -3006,7 +3007,7 @@ body {
 
 .roadmap-th-major { width: 110px; min-width: 110px; }
 .roadmap-th-minor { width: 90px; min-width: 90px; }
-.roadmap-th-assignee { width: 60px; min-width: 60px; }
+.roadmap-th-assignee { width: 60px; min-width: 60px; border-right: 2px solid var(--border); }
 .roadmap-th-output { width: 110px; min-width: 110px; }
 
 
@@ -3015,15 +3016,16 @@ body {
   font-size: var(--font-12);
   font-weight: var(--weight-600);
   color: var(--text-primary);
+  background: var(--bg-primary);
   vertical-align: top;
   text-align: center;
 }
 
-.roadmap-td-minor,
-.roadmap-td-assignee {
+.roadmap-td-minor {
   padding: 10px 10px;
   font-size: var(--font-12);
   color: var(--text-primary);
+  background: var(--bg-primary);
   text-align: center;
 }
 
@@ -3031,7 +3033,17 @@ body {
   padding: 10px 16px;
   font-size: var(--font-12);
   color: var(--text-primary);
+  background: var(--bg-primary);
   text-align: center;
+}
+
+.roadmap-td-assignee {
+  padding: 10px 10px;
+  font-size: var(--font-12);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  text-align: center;
+  border-right: 2px solid var(--border);
 }
 
 .roadmap-td-cell {
