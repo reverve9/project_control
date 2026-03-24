@@ -1,6 +1,5 @@
 import { Plus, Edit2, Trash2, Check, FileText, Copy, ExternalLink, StickyNote, Archive, User } from 'lucide-react'
 import { useState } from 'react'
-import RoadmapView from './RoadmapView'
 
 function ProjectDetail({
   project,
@@ -20,7 +19,6 @@ function ProjectDetail({
 }) {
   const [copiedId, setCopiedId] = useState(null)
   const [sortOrder, setSortOrder] = useState('newest')
-  const [activeTab, setActiveTab] = useState('dashboard')
 
   const handleDeleteProject = () => {
     if (window.confirm(`"${project.name}" 프로젝트를 삭제할까요?\n모든 태스크와 정보가 함께 삭제됩니다.`)) {
@@ -133,26 +131,9 @@ function ProjectDetail({
         {project.description && (
           <p className="content-subtitle">{project.description}</p>
         )}
-        <div className="project-tabs">
-          <button
-            className={`project-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            대시보드
-          </button>
-          <button
-            className={`project-tab ${activeTab === 'roadmap' ? 'active' : ''}`}
-            onClick={() => setActiveTab('roadmap')}
-          >
-            업무추진표
-          </button>
-        </div>
       </header>
 
       <div className="content-body">
-      {activeTab === 'roadmap' ? (
-        <RoadmapView projectId={project.id} user={user} projectName={project.name} />
-      ) : (
       <>
         <div className="progress-info-grid">
           <div className="progress-circle-card">
@@ -324,7 +305,6 @@ function ProjectDetail({
           )}
         </div>
       </>
-      )}
       </div>
     </>
   )

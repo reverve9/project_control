@@ -1,34 +1,42 @@
 import { useState, useEffect } from 'react'
 
-function ProjectModal({ project, categories, colors, onSave, onClose }) {
+function ProjectModal({ project, assignments, colors, onSave, onClose }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [color, setColor] = useState(colors[0])
-  const [categoryId, setCategoryId] = useState('')
+  const [assignmentId, setAssignmentId] = useState('')
+  const [deliverable, setDeliverable] = useState('')
+  const [assignee, setAssignee] = useState('')
 
   useEffect(() => {
     if (project) {
       setName(project.name)
       setDescription(project.description || '')
       setColor(project.color)
-      setCategoryId(project.category_id || '')
+      setAssignmentId(project.assignment_id || '')
+      setDeliverable(project.deliverable || '')
+      setAssignee(project.assignee || '')
     } else {
       setName('')
       setDescription('')
       setColor(colors[0])
-      setCategoryId('')
+      setAssignmentId('')
+      setDeliverable('')
+      setAssignee('')
     }
   }, [project, colors])
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!name.trim()) return
-    
+
     onSave({
       name: name.trim(),
       description: description.trim(),
       color,
-      category_id: categoryId || null
+      assignment_id: assignmentId || null,
+      deliverable: deliverable.trim(),
+      assignee: assignee.trim()
     })
   }
 
@@ -62,17 +70,39 @@ function ProjectModal({ project, categories, colors, onSave, onClose }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">카테고리</label>
+              <label className="form-label">과제</label>
               <select
                 className="form-input"
-                value={categoryId}
-                onChange={e => setCategoryId(e.target.value)}
+                value={assignmentId}
+                onChange={e => setAssignmentId(e.target.value)}
               >
                 <option value="">미분류</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                {assignments.map(asn => (
+                  <option key={asn.id} value={asn.id}>{asn.name}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">담당자</label>
+              <input
+                type="text"
+                className="form-input"
+                value={assignee}
+                onChange={e => setAssignee(e.target.value)}
+                placeholder="담당자를 입력하세요"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">최종산출물</label>
+              <input
+                type="text"
+                className="form-input"
+                value={deliverable}
+                onChange={e => setDeliverable(e.target.value)}
+                placeholder="최종산출물을 입력하세요"
+              />
             </div>
 
             <div className="form-group">

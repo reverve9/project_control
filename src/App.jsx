@@ -8,7 +8,8 @@ import ProjectModal from './components/ProjectModal'
 import TaskModal from './components/TaskModal'
 import TaskViewModal from './components/TaskViewModal'
 import InfoModal from './components/InfoModal'
-import CategoryModal from './components/CategoryModal'
+import AssignmentModal from './components/AssignmentModal'
+import AssignmentDetail from './components/AssignmentDetail'
 import SettingsPanel from './components/SettingsPanel'
 import ArchiveView from './components/ArchiveView'
 
@@ -19,36 +20,37 @@ function App() {
   const [userProfile, setUserProfile] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [projects, setProjects] = useState([])
-  const [categories, setCategories] = useState([])
+  const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeView, setActiveView] = useState('dashboard')
   const [activeProjectId, setActiveProjectId] = useState(null)
+  const [activeAssignmentId, setActiveAssignmentId] = useState(null)
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [showTaskViewModal, setShowTaskViewModal] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
-  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
   const [viewingTask, setViewingTask] = useState(null)
   const [editingInfo, setEditingInfo] = useState(null)
-  const [editingCategory, setEditingCategory] = useState(null)
+  const [editingAssignment, setEditingAssignment] = useState(null)
   const [archivedProjects, setArchivedProjects] = useState([])
   const [archivedTasks, setArchivedTasks] = useState([])
 
-  // 카테고리 데이터 가져오기
-  const fetchCategories = useCallback(async () => {
+  // 과제 데이터 가져오기
+  const fetchAssignments = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('project_categories')
+        .from('assignments')
         .select('*')
         .order('sort_order', { ascending: true })
 
       if (error) throw error
-      setCategories(data || [])
+      setAssignments(data || [])
     } catch (error) {
-      console.error('카테고리 로드 실패:', error)
+      console.error('과제 로드 실패:', error)
     }
   }, [])
 
@@ -135,10 +137,10 @@ function App() {
 
     if (user) {
       fetchUserProfile()
-      fetchCategories()
+      fetchAssignments()
       fetchProjects()
     }
-  }, [user, fetchProjects, fetchCategories])
+  }, [user, fetchProjects, fetchAssignments])
 
   // 보관함 뷰 진입 시 보관 항목 로드
   useEffect(() => {
@@ -227,6 +229,7 @@ function App() {
   }
 
   const activeProject = projects.find(p => p.id === activeProjectId)
+  const activeAssignment = assignments.find(a => a.id === activeAssignmentId)
 
   const updateProjectTimestamp = async (projectId) => {
     await supabase
@@ -244,7 +247,9 @@ function App() {
             name: projectData.name,
             description: projectData.description,
             color: projectData.color,
-            category_id: projectData.category_id
+            assignment_id: projectData.assignment_id,
+            deliverable: projectData.deliverable,
+            assignee: projectData.assignee
           })
           .eq('id', editingProject.id)
 
@@ -261,7 +266,9 @@ function App() {
             name: projectData.name,
             description: projectData.description,
             color: projectData.color,
-            category_id: projectData.category_id,
+            assignment_id: projectData.assignment_id,
+            deliverable: projectData.deliverable,
+            assignee: projectData.assignee,
             user_id: user.id
           })
           .select()
@@ -527,7 +534,14 @@ function App() {
 
   const selectProject = (projectId) => {
     setActiveProjectId(projectId)
+    setActiveAssignmentId(null)
     setActiveView('project')
+  }
+
+  const selectAssignment = (assignmentId) => {
+    setActiveAssignmentId(assignmentId)
+    setActiveProjectId(null)
+    setActiveView('assignment')
   }
 
   const getExpiredTasks = () => {
@@ -641,21 +655,31 @@ function App() {
     }
   }
 
-  const handleSaveCategory = async (categoryData) => {
+  const handleSaveAssignment = async (assignmentData) => {
     try {
-      if (editingCategory) {
+      if (editingAssignment) {
         const { error } = await supabase
-          .from('project_categories')
-          .update({ name: categoryData.name })
-          .eq('id', editingCategory.id)
+          .from('assignments')
+          .update({
+            name: assignmentData.name,
+            start_date: assignmentData.start_date,
+            end_date: assignmentData.end_date,
+            color: assignmentData.color,
+            priority: assignmentData.priority
+          })
+          .eq('id', editingAssignment.id)
 
         if (error) throw error
       } else {
-        const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order || 0), 0)
+        const maxOrder = assignments.reduce((max, c) => Math.max(max, c.sort_order || 0), 0)
         const { error } = await supabase
-          .from('project_categories')
+          .from('assignments')
           .insert({
-            name: categoryData.name,
+            name: assignmentData.name,
+            start_date: assignmentData.start_date,
+            end_date: assignmentData.end_date,
+            color: assignmentData.color,
+            priority: assignmentData.priority,
             user_id: user.id,
             sort_order: maxOrder + 1
           })
@@ -663,40 +687,40 @@ function App() {
         if (error) throw error
       }
 
-      await fetchCategories()
-      setShowCategoryModal(false)
-      setEditingCategory(null)
+      await fetchAssignments()
+      setShowAssignmentModal(false)
+      setEditingAssignment(null)
     } catch (error) {
-      console.error('카테고리 저장 실패:', error)
+      console.error('과제 저장 실패:', error)
     }
   }
 
-  const handleDeleteCategory = async (categoryId) => {
+  const handleDeleteAssignment = async (assignmentId) => {
     try {
       const { error } = await supabase
-        .from('project_categories')
+        .from('assignments')
         .delete()
-        .eq('id', categoryId)
+        .eq('id', assignmentId)
 
       if (error) throw error
 
-      await fetchCategories()
+      await fetchAssignments()
       await fetchProjects()
     } catch (error) {
-      console.error('카테고리 삭제 실패:', error)
+      console.error('과제 삭제 실패:', error)
     }
   }
 
   const handleReorderProject = async (projectId, targetProjectId, newCategoryId) => {
     try {
       if (targetProjectId === null) {
-        const categoryProjects = projects.filter(p => p.category_id === newCategoryId)
+        const categoryProjects = projects.filter(p => p.assignment_id === newCategoryId)
         const maxOrder = categoryProjects.reduce((max, p) => Math.max(max, p.sort_order || 0), -1)
 
         const { error } = await supabase
           .from('projects')
           .update({
-            category_id: newCategoryId,
+            assignment_id: newCategoryId,
             sort_order: maxOrder + 1
           })
           .eq('id', projectId)
@@ -705,16 +729,16 @@ function App() {
       } else {
         const draggedProject = projects.find(p => p.id === projectId)
         const categoryProjects = projects
-          .filter(p => p.category_id === newCategoryId && p.id !== projectId)
+          .filter(p => p.assignment_id === newCategoryId && p.id !== projectId)
           .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
 
         const targetIndex = categoryProjects.findIndex(p => p.id === targetProjectId)
-        categoryProjects.splice(targetIndex, 0, { ...draggedProject, category_id: newCategoryId })
+        categoryProjects.splice(targetIndex, 0, { ...draggedProject, assignment_id: newCategoryId })
 
         const updates = categoryProjects.map((p, index) => ({
           id: p.id,
           sort_order: index,
-          category_id: newCategoryId
+          assignment_id: newCategoryId
         }))
 
         for (const update of updates) {
@@ -722,7 +746,7 @@ function App() {
             .from('projects')
             .update({
               sort_order: update.sort_order,
-              category_id: update.category_id
+              assignment_id: update.assignment_id
             })
             .eq('id', update.id)
         }
@@ -746,23 +770,25 @@ function App() {
     <div className="app">
       <Sidebar
         projects={projects}
-        categories={categories}
+        assignments={assignments}
         activeView={activeView}
         activeProjectId={activeProjectId}
+        activeAssignmentId={activeAssignmentId}
         onSelectDashboard={() => setActiveView('dashboard')}
         onSelectProject={selectProject}
+        onSelectAssignment={selectAssignment}
         onSelectArchive={() => setActiveView('archive')}
         onAddProject={() => {
           setEditingProject(null)
           setShowProjectModal(true)
         }}
-        onAddCategory={() => {
-          setEditingCategory(null)
-          setShowCategoryModal(true)
+        onAddAssignment={() => {
+          setEditingAssignment(null)
+          setShowAssignmentModal(true)
         }}
-        onEditCategory={(category) => {
-          setEditingCategory(category)
-          setShowCategoryModal(true)
+        onEditAssignment={(assignment) => {
+          setEditingAssignment(assignment)
+          setShowAssignmentModal(true)
         }}
         onReorderProject={handleReorderProject}
         user={user}
@@ -784,6 +810,17 @@ function App() {
             onDeleteProject={handleDeleteProject}
             onRestoreTask={handleRestoreTask}
             onDeleteTask={handleDeleteTask}
+          />
+        ) : activeView === 'assignment' && activeAssignment ? (
+          <AssignmentDetail
+            assignment={activeAssignment}
+            projects={projects}
+            user={user}
+            onSelectProject={selectProject}
+            onEditAssignment={(assignment) => {
+              setEditingAssignment(assignment)
+              setShowAssignmentModal(true)
+            }}
           />
         ) : activeProject ? (
           <ProjectDetail
@@ -817,7 +854,7 @@ function App() {
       {showProjectModal && (
         <ProjectModal
           project={editingProject}
-          categories={categories}
+          assignments={assignments}
           colors={COLORS}
           onSave={handleAddProject}
           onClose={() => {
@@ -827,14 +864,14 @@ function App() {
         />
       )}
 
-      {showCategoryModal && (
-        <CategoryModal
-          category={editingCategory}
-          onSave={handleSaveCategory}
-          onDelete={handleDeleteCategory}
+      {showAssignmentModal && (
+        <AssignmentModal
+          assignment={editingAssignment}
+          onSave={handleSaveAssignment}
+          onDelete={handleDeleteAssignment}
           onClose={() => {
-            setShowCategoryModal(false)
-            setEditingCategory(null)
+            setShowAssignmentModal(false)
+            setEditingAssignment(null)
           }}
         />
       )}

@@ -1,52 +1,54 @@
 import { useState } from 'react'
 import { Plus, Settings, Archive, ChevronDown, ChevronRight, FolderPlus, Edit2 } from 'lucide-react'
 
-function Sidebar({ 
-  projects, 
-  categories,
-  activeView, 
-  activeProjectId, 
+function Sidebar({
+  projects,
+  assignments,
+  activeView,
+  activeProjectId,
+  activeAssignmentId,
   onSelectDashboard,
   onSelectProject,
+  onSelectAssignment,
   onAddProject,
   onSelectArchive,
-  onAddCategory,
-  onEditCategory,
+  onAddAssignment,
+  onEditAssignment,
   onReorderProject,
-  user, 
-  userProfile, 
-  onOpenSettings 
+  user,
+  userProfile,
+  onOpenSettings
 }) {
-  const [expandedCategories, setExpandedCategories] = useState({})
+  const [expandedAssignments, setExpandedAssignments] = useState({})
   const [draggedProject, setDraggedProject] = useState(null)
-  const [dragOverCategory, setDragOverCategory] = useState(null)
+  const [dragOverAssignment, setDragOverAssignment] = useState(null)
   const [dragOverDropzone, setDragOverDropzone] = useState(null)
 
-  const toggleCategory = (categoryId) => {
-    setExpandedCategories(prev => ({
+  const toggleAssignment = (assignmentId) => {
+    setExpandedAssignments(prev => ({
       ...prev,
-      [categoryId]: !prev[categoryId]
+      [assignmentId]: !prev[assignmentId]
     }))
   }
 
-  // 카테고리별 프로젝트 그룹화
-  const sortedCategories = [...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-  
-  const categorizedProjects = sortedCategories.map(cat => ({
-    ...cat,
+  // 과제별 프로젝트 그룹화
+  const sortedAssignments = [...assignments].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+
+  const groupedProjects = sortedAssignments.map(asn => ({
+    ...asn,
     projects: projects
-      .filter(p => p.category_id === cat.id)
+      .filter(p => p.assignment_id === asn.id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
   }))
 
-  // 카테고리 없는 프로젝트
-  const uncategorizedProjects = projects
-    .filter(p => !p.category_id)
+  // 과제 미지정 프로젝트
+  const unassignedProjects = projects
+    .filter(p => !p.assignment_id)
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
 
   const getProjectCounts = (project) => {
     const totalCount = project.tasks.reduce((sum, m) => sum + (m.details?.length || 0), 0)
-    const completedCount = project.tasks.reduce((sum, m) => 
+    const completedCount = project.tasks.reduce((sum, m) =>
       sum + (m.details?.filter(d => d.completed).length || 0), 0
     )
     return { totalCount, completedCount }
@@ -58,43 +60,42 @@ function Sidebar({
     e.dataTransfer.effectAllowed = 'move'
   }
 
-  const handleProjectDragOver = (e, targetProject, categoryId) => {
+  const handleProjectDragOver = (e, targetProject, assignmentId) => {
     e.preventDefault()
     if (!draggedProject || draggedProject.id === targetProject.id) return
   }
 
-  const handleProjectDrop = (e, targetProject, categoryId) => {
+  const handleProjectDrop = (e, targetProject, assignmentId) => {
     e.preventDefault()
     if (!draggedProject || draggedProject.id === targetProject.id) return
-    
-    onReorderProject(draggedProject.id, targetProject.id, categoryId)
+
+    onReorderProject(draggedProject.id, targetProject.id, assignmentId)
     setDraggedProject(null)
   }
 
-  const handleCategoryDrop = (e, categoryId) => {
+  const handleAssignmentDrop = (e, assignmentId) => {
     e.preventDefault()
     if (!draggedProject) return
-    
-    // 카테고리로 직접 드롭 (카테고리 변경)
-    if (draggedProject.category_id !== categoryId) {
-      onReorderProject(draggedProject.id, null, categoryId)
+
+    if (draggedProject.assignment_id !== assignmentId) {
+      onReorderProject(draggedProject.id, null, assignmentId)
     }
     setDraggedProject(null)
-    setDragOverCategory(null)
+    setDragOverAssignment(null)
   }
 
-  const handleCategoryDragOver = (e, categoryId) => {
+  const handleAssignmentDragOver = (e, assignmentId) => {
     e.preventDefault()
-    setDragOverCategory(categoryId)
+    setDragOverAssignment(assignmentId)
   }
 
-  const handleCategoryDragLeave = () => {
-    setDragOverCategory(null)
+  const handleAssignmentDragLeave = () => {
+    setDragOverAssignment(null)
   }
 
   const handleDragEnd = () => {
     setDraggedProject(null)
-    setDragOverCategory(null)
+    setDragOverAssignment(null)
     setDragOverDropzone(null)
   }
 
@@ -111,30 +112,29 @@ function Sidebar({
     setDragOverDropzone(null)
   }
 
-  const handleDropzoneDrop = (e, position, categoryId, categoryProjects) => {
+  const handleDropzoneDrop = (e, position, assignmentId, assignmentProjects) => {
     e.preventDefault()
     e.stopPropagation()
     if (!draggedProject) return
 
-    // position: 'top', 'bottom', 또는 프로젝트 인덱스
     let targetProjectId = null
-    
-    if (position === 'top' && categoryProjects.length > 0) {
-      targetProjectId = categoryProjects[0].id
+
+    if (position === 'top' && assignmentProjects.length > 0) {
+      targetProjectId = assignmentProjects[0].id
     } else if (position === 'bottom') {
-      targetProjectId = null // 맨 뒤로
-    } else if (typeof position === 'number' && categoryProjects[position]) {
-      targetProjectId = categoryProjects[position].id
+      targetProjectId = null
+    } else if (typeof position === 'number' && assignmentProjects[position]) {
+      targetProjectId = assignmentProjects[position].id
     }
 
-    onReorderProject(draggedProject.id, targetProjectId, categoryId)
+    onReorderProject(draggedProject.id, targetProjectId, assignmentId)
     setDraggedProject(null)
     setDragOverDropzone(null)
   }
 
-  const renderProject = (project, categoryId) => {
+  const renderProject = (project, assignmentId) => {
     const { totalCount, completedCount } = getProjectCounts(project)
-    
+
     return (
       <div
         key={project.id}
@@ -142,12 +142,12 @@ function Sidebar({
         onClick={() => onSelectProject(project.id)}
         draggable
         onDragStart={(e) => handleProjectDragStart(e, project)}
-        onDragOver={(e) => handleProjectDragOver(e, project, categoryId)}
-        onDrop={(e) => handleProjectDrop(e, project, categoryId)}
+        onDragOver={(e) => handleProjectDragOver(e, project, assignmentId)}
+        onDrop={(e) => handleProjectDrop(e, project, assignmentId)}
         onDragEnd={handleDragEnd}
       >
-        <div 
-          className="project-color" 
+        <div
+          className="project-color"
           style={{ backgroundColor: project.color }}
         />
         <span className="project-name">{project.name}</span>
@@ -175,66 +175,66 @@ function Sidebar({
           >
             프로젝트
           </span>
-          <button className="sidebar-add-category-btn" onClick={onAddCategory} title="카테고리 추가">
+          <button className="sidebar-add-category-btn" onClick={onAddAssignment} title="과제 추가">
             <FolderPlus size={14} />
           </button>
         </div>
-        
+
         <div className="project-list">
-          {/* 카테고리별 프로젝트 */}
-          {categorizedProjects.map(category => (
-            <div key={category.id} className="category-group">
-              <div 
-                className={`category-header ${dragOverCategory === category.id ? 'drag-over' : ''}`}
-                onDragOver={(e) => handleCategoryDragOver(e, category.id)}
-                onDragLeave={handleCategoryDragLeave}
-                onDrop={(e) => handleCategoryDrop(e, category.id)}
+          {/* 과제별 프로젝트 */}
+          {groupedProjects.map(assignment => (
+            <div key={assignment.id} className="category-group">
+              <div
+                className={`category-header ${activeAssignmentId === assignment.id ? 'active' : ''} ${dragOverAssignment === assignment.id ? 'drag-over' : ''}`}
+                onDragOver={(e) => handleAssignmentDragOver(e, assignment.id)}
+                onDragLeave={handleAssignmentDragLeave}
+                onDrop={(e) => handleAssignmentDrop(e, assignment.id)}
               >
-                <div 
+                <div
                   className="category-toggle"
-                  onClick={() => toggleCategory(category.id)}
+                  onClick={() => toggleAssignment(assignment.id)}
                 >
-                  {expandedCategories[category.id] ? 
-                    <ChevronDown size={14} /> : 
+                  {expandedAssignments[assignment.id] ?
+                    <ChevronDown size={14} /> :
                     <ChevronRight size={14} />
                   }
                 </div>
-                <span 
+                <span
                   className="category-name"
-                  onClick={() => toggleCategory(category.id)}
+                  onClick={() => onSelectAssignment(assignment.id)}
                 >
-                  {category.name}
+                  {assignment.name}
                 </span>
-                <span className="category-count">{category.projects.length}</span>
-                <button 
+                <span className="category-count">{assignment.projects.length}</span>
+                <button
                   className="category-edit-btn"
                   onClick={(e) => {
                     e.stopPropagation()
-                    onEditCategory(category)
+                    onEditAssignment(assignment)
                   }}
                 >
                   <Edit2 size={12} />
                 </button>
               </div>
-              
-              {expandedCategories[category.id] && (
+
+              {expandedAssignments[assignment.id] && (
                 <div className="category-projects">
                   {/* 상단 드롭존 */}
-                  <div 
-                    className={`dropzone dropzone-top ${dragOverDropzone === `${category.id}-top` ? 'active' : ''}`}
-                    onDragOver={(e) => handleDropzoneDragOver(e, `${category.id}-top`)}
+                  <div
+                    className={`dropzone dropzone-top ${dragOverDropzone === `${assignment.id}-top` ? 'active' : ''}`}
+                    onDragOver={(e) => handleDropzoneDragOver(e, `${assignment.id}-top`)}
                     onDragLeave={handleDropzoneDragLeave}
-                    onDrop={(e) => handleDropzoneDrop(e, 'top', category.id, category.projects)}
+                    onDrop={(e) => handleDropzoneDrop(e, 'top', assignment.id, assignment.projects)}
                   />
-                  {category.projects.map((project, index) => (
+                  {assignment.projects.map((project, index) => (
                     <div key={project.id}>
-                      {renderProject(project, category.id)}
+                      {renderProject(project, assignment.id)}
                       {/* 프로젝트 사이 드롭존 */}
-                      <div 
-                        className={`dropzone ${dragOverDropzone === `${category.id}-${index}` ? 'active' : ''}`}
-                        onDragOver={(e) => handleDropzoneDragOver(e, `${category.id}-${index}`)}
+                      <div
+                        className={`dropzone ${dragOverDropzone === `${assignment.id}-${index}` ? 'active' : ''}`}
+                        onDragOver={(e) => handleDropzoneDragOver(e, `${assignment.id}-${index}`)}
                         onDragLeave={handleDropzoneDragLeave}
-                        onDrop={(e) => handleDropzoneDrop(e, index + 1, category.id, category.projects)}
+                        onDrop={(e) => handleDropzoneDrop(e, index + 1, assignment.id, assignment.projects)}
                       />
                     </div>
                   ))}
@@ -244,50 +244,50 @@ function Sidebar({
           ))}
 
           {/* 미분류 프로젝트 */}
-          {uncategorizedProjects.length > 0 && (
+          {unassignedProjects.length > 0 && (
             <div className="category-group">
-              <div 
-                className={`category-header uncategorized ${dragOverCategory === 'uncategorized' ? 'drag-over' : ''}`}
-                onDragOver={(e) => handleCategoryDragOver(e, 'uncategorized')}
-                onDragLeave={handleCategoryDragLeave}
-                onDrop={(e) => handleCategoryDrop(e, null)}
+              <div
+                className={`category-header uncategorized ${dragOverAssignment === 'uncategorized' ? 'drag-over' : ''}`}
+                onDragOver={(e) => handleAssignmentDragOver(e, 'uncategorized')}
+                onDragLeave={handleAssignmentDragLeave}
+                onDrop={(e) => handleAssignmentDrop(e, null)}
               >
-                <div 
+                <div
                   className="category-toggle"
-                  onClick={() => toggleCategory('uncategorized')}
+                  onClick={() => toggleAssignment('uncategorized')}
                 >
-                  {expandedCategories['uncategorized'] ? 
-                    <ChevronDown size={14} /> : 
+                  {expandedAssignments['uncategorized'] ?
+                    <ChevronDown size={14} /> :
                     <ChevronRight size={14} />
                   }
                 </div>
-                <span 
+                <span
                   className="category-name"
-                  onClick={() => toggleCategory('uncategorized')}
+                  onClick={() => toggleAssignment('uncategorized')}
                 >
                   미분류
                 </span>
-                <span className="category-count">{uncategorizedProjects.length}</span>
+                <span className="category-count">{unassignedProjects.length}</span>
               </div>
-              
-              {expandedCategories['uncategorized'] && (
+
+              {expandedAssignments['uncategorized'] && (
                 <div className="category-projects">
                   {/* 상단 드롭존 */}
-                  <div 
+                  <div
                     className={`dropzone dropzone-top ${dragOverDropzone === 'uncategorized-top' ? 'active' : ''}`}
                     onDragOver={(e) => handleDropzoneDragOver(e, 'uncategorized-top')}
                     onDragLeave={handleDropzoneDragLeave}
-                    onDrop={(e) => handleDropzoneDrop(e, 'top', null, uncategorizedProjects)}
+                    onDrop={(e) => handleDropzoneDrop(e, 'top', null, unassignedProjects)}
                   />
-                  {uncategorizedProjects.map((project, index) => (
+                  {unassignedProjects.map((project, index) => (
                     <div key={project.id}>
                       {renderProject(project, null)}
                       {/* 프로젝트 사이 드롭존 */}
-                      <div 
+                      <div
                         className={`dropzone ${dragOverDropzone === `uncategorized-${index}` ? 'active' : ''}`}
                         onDragOver={(e) => handleDropzoneDragOver(e, `uncategorized-${index}`)}
                         onDragLeave={handleDropzoneDragLeave}
-                        onDrop={(e) => handleDropzoneDrop(e, index + 1, null, uncategorizedProjects)}
+                        onDrop={(e) => handleDropzoneDrop(e, index + 1, null, unassignedProjects)}
                       />
                     </div>
                   ))}

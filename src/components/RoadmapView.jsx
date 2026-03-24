@@ -11,7 +11,7 @@ const QUARTERS = [
 
 const MONTH_NAMES = ['', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
-function RoadmapView({ projectId, user, projectName }) {
+function RoadmapView({ projectIds, user, assignmentName }) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [quarterIndex, setQuarterIndex] = useState(Math.floor(new Date().getMonth() / 3))
   const [rows, setRows] = useState([])
@@ -143,7 +143,7 @@ function RoadmapView({ projectId, user, projectName }) {
     const html = `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<title>${esc(projectName)} — 업무추진 흐름도</title>
+<title>${esc(assignmentName)} — 업무추진 흐름도</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -192,7 +192,7 @@ function RoadmapView({ projectId, user, projectName }) {
 </div>
 <div class="content">
   <div class="page">
-    <h2 class="title">${esc(projectName)} — 업무추진 흐름도(${titleYear})</h2>
+    <h2 class="title">${esc(assignmentName)} — 업무추진 흐름도(${titleYear})</h2>
     <table>
       <thead>
         <tr>${headerRow1}</tr>
@@ -211,7 +211,7 @@ function RoadmapView({ projectId, user, projectName }) {
     win.document.open()
     win.document.write(html)
     win.document.close()
-  }, [rows, projectName])
+  }, [rows, assignmentName])
 
   // 입력 폼
   const [formMajor, setFormMajor] = useState('')
@@ -227,23 +227,35 @@ function RoadmapView({ projectId, user, projectName }) {
   const quarter = QUARTERS[quarterIndex]
 
   const fetchData = useCallback(async () => {
+    if (!projectIds || projectIds.length === 0) {
+      setRows([])
+      setCells({})
+      return
+    }
+
     const { data: rowData } = await supabase
       .from('roadmap_rows')
       .select('*')
-      .eq('project_id', projectId)
+      .in('project_id', projectIds)
       .order('sort_order', { ascending: true })
 
-    const { data: cellData } = await supabase
-      .from('roadmap_cells')
-      .select('*')
-      .eq('year', year)
+    const rowIds = (rowData || []).map(r => r.id)
+    let cellData = []
+    if (rowIds.length > 0) {
+      const { data } = await supabase
+        .from('roadmap_cells')
+        .select('*')
+        .in('row_id', rowIds)
+        .eq('year', year)
+      cellData = data || []
+    }
 
     setRows(rowData || [])
 
     const cellMap = {}
-    if (cellData) cellData.forEach(c => { cellMap[`${c.row_id}-${c.month}`] = c })
+    cellData.forEach(c => { cellMap[`${c.row_id}-${c.month}`] = c })
     setCells(cellMap)
-  }, [year, projectId])
+  }, [year, JSON.stringify(projectIds)])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -265,7 +277,7 @@ function RoadmapView({ projectId, user, projectName }) {
     const commaToNewline = (str) => str.replace(/\s*,\s*/g, '\n')
 
     await supabase.from('roadmap_rows').insert({
-      project_id: projectId,
+      project_id: projectIds[0],
       major: commaToNewline(formMajor.trim()),
       minor: formMinor.trim() ? commaToNewline(formMinor.trim()) : null,
       assignee: formAssignee.trim() ? commaToNewline(formAssignee.trim()) : null,
