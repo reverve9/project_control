@@ -67,11 +67,13 @@ function RoadmapView({ projectId, user }) {
     if (!formMajor.trim()) return
     const maxOrder = rows.reduce((max, r) => Math.max(max, r.sort_order || 0), 0)
 
+    const commaToNewline = (str) => str.replace(/\s*,\s*/g, '\n')
+
     await supabase.from('roadmap_rows').insert({
       project_id: projectId,
-      major: formMajor.trim(),
-      minor: formMinor.trim() || null,
-      assignee: formAssignee.trim() || null,
+      major: commaToNewline(formMajor.trim()),
+      minor: formMinor.trim() ? commaToNewline(formMinor.trim()) : null,
+      assignee: formAssignee.trim() ? commaToNewline(formAssignee.trim()) : null,
       user_id: user.id,
       sort_order: maxOrder + 1
     })
@@ -262,14 +264,15 @@ function RoadmapView({ projectId, user }) {
                 <Plus size={14} /> 추가
               </button>
             </div>
+            <div className="roadmap-form-hint">쉼표(,)로 구분하면 줄바꿈됩니다</div>
             {rows.length > 0 && (
               <div className="roadmap-row-list">
                 {rows.map((row, idx) => (
                   <div key={row.id} className="roadmap-row-item">
                     <span className="roadmap-row-item-num">{idx + 1}</span>
-                    <span className="roadmap-row-item-major">{row.major}</span>
-                    {row.minor && <span className="roadmap-row-item-minor">{row.minor}</span>}
-                    {row.assignee && <span className="roadmap-row-item-assignee">{row.assignee}</span>}
+                    <span className="roadmap-row-item-major">{row.major.split('\n')[0]}</span>
+                    {row.minor && <span className="roadmap-row-item-minor">{row.minor.split('\n')[0]}</span>}
+                    {row.assignee && <span className="roadmap-row-item-assignee">{row.assignee.split('\n')[0]}</span>}
                     <div className="roadmap-row-item-actions">
                       <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'up')} disabled={idx === 0}><ArrowUp size={11} /></button>
                       <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'down')} disabled={idx === rows.length - 1}><ArrowDown size={11} /></button>

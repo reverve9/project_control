@@ -2918,6 +2918,12 @@ body {
   flex: 1.5;
 }
 
+.roadmap-form-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
 .roadmap-row-list {
   margin-top: 10px;
   border-top: 1px solid var(--border);
