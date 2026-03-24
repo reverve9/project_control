@@ -300,25 +300,25 @@ function RoadmapView({ projectId, user }) {
         )}
       </div>
 
-      {/* 분기 네비게이션 */}
-      <div className="roadmap-toolbar">
-        <div className="roadmap-nav">
-          <button className="btn btn-ghost btn-sm" onClick={handlePrevQuarter}><ChevronLeft size={16} /></button>
-          <span className="roadmap-nav-label">{year}년 {quarter.label}</span>
-          <button className="btn btn-ghost btn-sm" onClick={handleNextQuarter}><ChevronRight size={16} /></button>
+      {/* 테이블 카드 */}
+      <div className="roadmap-table-card">
+        <div className="roadmap-toolbar">
+          <div className="roadmap-nav">
+            <button className="btn btn-ghost btn-sm" onClick={handlePrevQuarter}><ChevronLeft size={16} /></button>
+            <span className="roadmap-nav-label">{year}년 {quarter.label}</span>
+            <button className="btn btn-ghost btn-sm" onClick={handleNextQuarter}><ChevronRight size={16} /></button>
+          </div>
         </div>
-      </div>
 
-      {/* 테이블 */}
-      {rows.length === 0 ? (
-        <div className="empty-state" style={{ marginTop: '40px' }}>
-          <div className="empty-state-title">업무추진표가 비어있어요</div>
-          <div className="empty-state-desc">TASK를 열어 업무를 추가하세요</div>
-        </div>
-      ) : (
-        <div className="roadmap-table-wrapper">
-          <table className="roadmap-table">
-            <thead>
+        {rows.length === 0 ? (
+          <div className="empty-state" style={{ marginTop: '40px', paddingBottom: '40px' }}>
+            <div className="empty-state-title">업무추진표가 비어있어요</div>
+            <div className="empty-state-desc">TASK를 열어 업무를 추가하세요</div>
+          </div>
+        ) : (
+          <div className="roadmap-table-wrapper">
+            <table className="roadmap-table">
+              <thead>
               <tr>
                 <th className="roadmap-th-major" colSpan={2}>업무</th>
                 <th className="roadmap-th-output">산출물</th>
@@ -385,8 +385,9 @@ function RoadmapView({ projectId, user }) {
               })}
             </tbody>
           </table>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
