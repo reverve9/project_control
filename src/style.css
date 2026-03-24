@@ -3008,7 +3008,7 @@ body {
 
 .roadmap-th-major { width: 110px; min-width: 110px; }
 .roadmap-th-minor { width: 90px; min-width: 90px; }
-.roadmap-th-assignee { width: 60px; min-width: 60px; border-right: 2px solid var(--border); }
+.roadmap-th-assignee { width: 60px; min-width: 60px; }
 .roadmap-th-output { width: 110px; min-width: 110px; }
 
 
