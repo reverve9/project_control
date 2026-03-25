@@ -277,15 +277,27 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
     // 프로젝트→태스크에서 기대하는 자동 행 목록
     const expected = []
     currentProjects.forEach(project => {
-      ;(project.tasks || []).forEach(task => {
+      const tasks = project.tasks || []
+      if (tasks.length === 0) {
+        // 태스크 없는 프로젝트도 대분류로 표시
         expected.push({
           projectId: project.id,
-          taskId: task.id,
+          taskId: project.id,
           major: project.name,
-          minor: task.title,
-          assignee: task.assignee || null
+          minor: null,
+          assignee: null
         })
-      })
+      } else {
+        tasks.forEach(task => {
+          expected.push({
+            projectId: project.id,
+            taskId: task.id,
+            major: project.name,
+            minor: task.title,
+            assignee: task.assignee || null
+          })
+        })
+      }
     })
 
     const expectedTaskIds = new Set(expected.map(e => e.taskId))
