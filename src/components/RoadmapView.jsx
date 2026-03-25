@@ -685,7 +685,8 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
             <table className="roadmap-table">
               <thead>
               <tr>
-                <th className="roadmap-th-major" colSpan={2}>업무</th>
+                <th className="roadmap-th-major">프로젝트</th>
+                <th className="roadmap-th-minor">태스크</th>
                 <th className="roadmap-th-output">산출물</th>
                 <th className="roadmap-th-assignee">담당</th>
                 {quarter.months.map(m => (
@@ -695,15 +696,14 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
             </thead>
             <tbody>
               {groupedRows.map(group => {
-                const hasMinor = group.rows.some(r => r.minor)
                 return group.rows.map((row, ri) => (
                   <tr key={row.id}>
                     {ri === 0 && (
-                      <td className="roadmap-td-major" rowSpan={group.rows.length} colSpan={hasMinor ? 1 : 2}>
+                      <td className="roadmap-td-major" rowSpan={group.rows.length}>
                         {renderField(row, 'major')}
                       </td>
                     )}
-                    {hasMinor && <td className="roadmap-td-minor">{renderField(row, 'minor')}</td>}
+                    <td className="roadmap-td-minor">{renderField(row, 'minor')}</td>
                     <td className="roadmap-td-output">{renderField(row, 'output')}</td>
                     <td className="roadmap-td-assignee">{renderField(row, 'assignee')}</td>
                     {quarter.months.map(m => {

@@ -3073,10 +3073,11 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.roadmap-th-major { width: 110px; min-width: 110px; }
-.roadmap-th-minor { width: 90px; min-width: 90px; }
-.roadmap-th-assignee { width: 60px; min-width: 60px; }
-.roadmap-th-output { width: 110px; min-width: 110px; }
+.roadmap-th-major { width: 140px; min-width: 140px; }
+.roadmap-th-minor { width: 120px; min-width: 120px; }
+.roadmap-th-assignee { width: 56px; min-width: 56px; }
+.roadmap-th-output { width: 90px; min-width: 90px; }
+.roadmap-th-month { min-width: 80px; }
 
 
 .roadmap-td-major {
