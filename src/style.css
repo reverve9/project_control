@@ -3306,7 +3306,7 @@ body {
   font-size: var(--font-12);
   color: var(--text-primary);
   background: var(--bg-primary);
-  text-align: left;
+  text-align: center;
   word-break: keep-all;
 }
 
@@ -3315,7 +3315,7 @@ body {
   font-size: var(--font-12);
   color: var(--text-primary);
   background: var(--bg-primary);
-  text-align: left;
+  text-align: center;
   word-break: keep-all;
 }
 
