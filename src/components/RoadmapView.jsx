@@ -40,15 +40,20 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
     if (!win) return
     win.document.write('<html><head><title>로딩중...</title></head><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;color:#999">불러오는 중...</body></html>')
 
-    // 전체 연도 셀 데이터 가져오기
+    try {
 
-    const { data: allCellData } = await supabase
-      .from('roadmap_cells')
-      .select('*')
-      .in('row_id', rowIds)
+    // 전체 연도 셀 데이터 가져오기
+    let allCellData = []
+    if (rowIds.length > 0) {
+      const { data, error } = await supabase
+        .from('roadmap_cells')
+        .select('*')
+        .in('row_id', rowIds)
+      if (!error && data) allCellData = data
+    }
 
     const allCells = {}
-    ;(allCellData || []).forEach(c => { allCells[`${c.row_id}-${c.year}-${c.month}`] = c })
+    allCellData.forEach(c => { allCells[`${c.row_id}-${c.year}-${c.month}`] = c })
 
     const hasMinorAny = rows.some(r => r.minor)
 
@@ -228,6 +233,13 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
     win.document.open()
     win.document.write(html)
     win.document.close()
+
+    } catch (err) {
+      console.error('흐름도 생성 오류:', err)
+      win.document.open()
+      win.document.write(`<html><body style="font-family:sans-serif;padding:40px;color:#c00"><h3>오류 발생</h3><pre>${err.message}</pre></body></html>`)
+      win.document.close()
+    }
   }, [rows, assignmentName])
 
   // 수동 입력 폼
@@ -248,11 +260,16 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
     const currentProjects = projectsRef.current
     if (!currentProjects?.length || !projectIds?.length) return
 
-    const { data: existingAuto } = await supabase
+    try {
+
+    const { data: existingAuto, error: syncErr } = await supabase
       .from('roadmap_rows')
       .select('id, task_id, major, minor, assignee')
       .in('project_id', projectIds)
       .not('task_id', 'is', null)
+
+    // task_id 컬럼이 없으면 동기화 건너뜀
+    if (syncErr) { console.warn('syncAutoRows skip:', syncErr.message); return }
 
     const existingByTaskId = {}
     ;(existingAuto || []).forEach(r => { existingByTaskId[r.task_id] = r })
@@ -315,6 +332,8 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
         }).eq('id', existingByTaskId[e.taskId].id)
       ))
     }
+
+    } catch (err) { console.warn('syncAutoRows error:', err) }
   }, [JSON.stringify(projectIds), user?.id])
 
   const fetchData = useCallback(async () => {
