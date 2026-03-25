@@ -1,23 +1,20 @@
 import { useState, useEffect } from 'react'
-import { Link, FileText, Paperclip } from 'lucide-react'
+import { Link, FileText } from 'lucide-react'
 
 function InfoModal({ info, onSave, onClose }) {
   const [label, setLabel] = useState('')
   const [url, setUrl] = useState('')
   const [memo, setMemo] = useState('')
-  const [attachment, setAttachment] = useState('')
 
   useEffect(() => {
     if (info) {
       setLabel(info.label || '')
       setUrl(info.value || '')
       setMemo(info.memo || '')
-      setAttachment(info.attachment || '')
     } else {
       setLabel('')
       setUrl('')
       setMemo('')
-      setAttachment('')
     }
   }, [info])
 
@@ -29,8 +26,7 @@ function InfoModal({ info, onSave, onClose }) {
       type: 'info',
       label: label.trim(),
       value: url.trim() || null,
-      memo: memo.trim() || null,
-      attachment: attachment.trim() || null
+      memo: memo.trim() || null
     })
   }
 
@@ -58,7 +54,7 @@ function InfoModal({ info, onSave, onClose }) {
                 className="form-input"
                 value={label}
                 onChange={e => setLabel(e.target.value)}
-                placeholder="예: GitHub, 스테이징 서버, API 문서"
+                placeholder="제목을 입력하세요"
                 autoFocus
               />
             </div>
@@ -74,7 +70,7 @@ function InfoModal({ info, onSave, onClose }) {
                 className="form-input"
                 value={url}
                 onChange={e => setUrl(e.target.value)}
-                placeholder="https://..."
+                placeholder="https://example.com"
               />
             </div>
 
@@ -88,25 +84,11 @@ function InfoModal({ info, onSave, onClose }) {
                 className="form-input form-textarea"
                 value={memo}
                 onChange={e => setMemo(e.target.value)}
-                placeholder="아이디, 비밀번호, 참고사항 등"
+                placeholder="참고사항을 입력하세요"
                 rows={4}
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">
-                <Paperclip size={14} strokeWidth={1.5} />
-                첨부 링크
-                <span className="form-label-optional">선택</span>
-              </label>
-              <input
-                type="text"
-                className="form-input"
-                value={attachment}
-                onChange={e => setAttachment(e.target.value)}
-                placeholder="NAS 경로 또는 파일 URL"
-              />
-            </div>
           </div>
 
           <div className="modal-footer">
