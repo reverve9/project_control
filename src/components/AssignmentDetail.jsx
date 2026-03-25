@@ -67,6 +67,7 @@ function AssignmentDetail({ assignment, projects, user, onEditAssignment, onSele
         {activeTab === 'roadmap' ? (
           <RoadmapView
             projectIds={projectIds}
+            projects={assignmentProjects}
             user={user}
             assignmentName={assignment.name}
           />

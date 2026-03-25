@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Check, X, Printer } from 'lucide-react'
+import { Plus, Trash2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Check, X, Printer, Link } from 'lucide-react'
 
 const QUARTERS = [
   { label: 'Q1', months: [1, 2, 3] },
@@ -11,12 +11,26 @@ const QUARTERS = [
 
 const MONTH_NAMES = ['', '1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
-function RoadmapView({ projectIds, user, assignmentName }) {
+function RoadmapView({ projectIds, projects, user, assignmentName }) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [quarterIndex, setQuarterIndex] = useState(Math.floor(new Date().getMonth() / 3))
   const [rows, setRows] = useState([])
   const [cells, setCells] = useState({})
   const [formOpen, setFormOpen] = useState(false)
+
+  // 프로젝트/태스크 데이터 다이제스트 (실제 변경 시에만 sync)
+  const projectsDigest = useMemo(() => {
+    if (!projects) return ''
+    return projects.map(p =>
+      p.id + ':' + p.name + ':' + (p.tasks || []).map(t =>
+        t.id + '.' + t.title + '.' + (t.assignee || '')
+      ).join(',')
+    ).join(';')
+  }, [projects])
+
+  const projectsRef = useRef(projects)
+  projectsRef.current = projects
+
   const openFlowchartWindow = useCallback(async () => {
     const rowIds = rows.map(r => r.id)
     if (!rowIds.length) return
@@ -213,7 +227,7 @@ function RoadmapView({ projectIds, user, assignmentName }) {
     win.document.close()
   }, [rows, assignmentName])
 
-  // 입력 폼
+  // 수동 입력 폼
   const [formMajor, setFormMajor] = useState('')
   const [formMinor, setFormMinor] = useState('')
   const [formAssignee, setFormAssignee] = useState('')
@@ -225,6 +239,80 @@ function RoadmapView({ projectIds, user, assignmentName }) {
   const [editingFieldValue, setEditingFieldValue] = useState('')
 
   const quarter = QUARTERS[quarterIndex]
+
+  // 자동 연동 동기화: 프로젝트→태스크 → roadmap_rows
+  const syncAutoRows = useCallback(async () => {
+    const currentProjects = projectsRef.current
+    if (!currentProjects?.length || !projectIds?.length) return
+
+    const { data: existingAuto } = await supabase
+      .from('roadmap_rows')
+      .select('id, task_id, major, minor, assignee')
+      .in('project_id', projectIds)
+      .not('task_id', 'is', null)
+
+    const existingByTaskId = {}
+    ;(existingAuto || []).forEach(r => { existingByTaskId[r.task_id] = r })
+
+    // 프로젝트→태스크에서 기대하는 자동 행 목록
+    const expected = []
+    currentProjects.forEach(project => {
+      ;(project.tasks || []).forEach(task => {
+        expected.push({
+          projectId: project.id,
+          taskId: task.id,
+          major: project.name,
+          minor: task.title,
+          assignee: task.assignee || null
+        })
+      })
+    })
+
+    const expectedTaskIds = new Set(expected.map(e => e.taskId))
+
+    // 삭제된 태스크의 자동 행 제거
+    const staleIds = (existingAuto || []).filter(r => !expectedTaskIds.has(r.task_id)).map(r => r.id)
+    if (staleIds.length) {
+      await supabase.from('roadmap_rows').delete().in('id', staleIds)
+    }
+
+    // 새 태스크의 자동 행 추가
+    const toInsert = expected.filter(e => !existingByTaskId[e.taskId])
+    if (toInsert.length) {
+      const { data: maxRow } = await supabase
+        .from('roadmap_rows')
+        .select('sort_order')
+        .in('project_id', projectIds)
+        .order('sort_order', { ascending: false })
+        .limit(1)
+      let maxOrder = maxRow?.[0]?.sort_order || 0
+
+      await supabase.from('roadmap_rows').insert(
+        toInsert.map((e, i) => ({
+          project_id: e.projectId,
+          task_id: e.taskId,
+          major: e.major,
+          minor: e.minor,
+          assignee: e.assignee,
+          user_id: user.id,
+          sort_order: maxOrder + i + 1
+        }))
+      )
+    }
+
+    // 프로젝트/태스크 이름 변경 반영
+    const updates = expected.filter(e => {
+      const ex = existingByTaskId[e.taskId]
+      return ex && (ex.major !== e.major || ex.minor !== e.minor || ex.assignee !== e.assignee)
+    })
+    if (updates.length) {
+      await Promise.all(updates.map(e =>
+        supabase.from('roadmap_rows').update({
+          major: e.major, minor: e.minor, assignee: e.assignee
+        }).eq('id', existingByTaskId[e.taskId].id)
+      ))
+    }
+  }, [JSON.stringify(projectIds), user?.id])
 
   const fetchData = useCallback(async () => {
     if (!projectIds || projectIds.length === 0) {
@@ -257,7 +345,20 @@ function RoadmapView({ projectIds, user, assignmentName }) {
     setCells(cellMap)
   }, [year, JSON.stringify(projectIds)])
 
+  // 프로젝트/태스크 변경 시 자동 동기화 후 데이터 재조회
+  useEffect(() => {
+    const run = async () => {
+      await syncAutoRows()
+      await fetchData()
+    }
+    run()
+  }, [projectsDigest, syncAutoRows, fetchData])
+
+  // 연도/분기 변경 시 데이터 재조회
   useEffect(() => { fetchData() }, [fetchData])
+
+  // 자동 행 판별
+  const isAutoRow = (row) => !!row.task_id
 
   // 분기 이동
   const handlePrevQuarter = () => {
@@ -269,7 +370,7 @@ function RoadmapView({ projectIds, user, assignmentName }) {
     else setQuarterIndex(q => q + 1)
   }
 
-  // 행 추가
+  // 수동 행 추가
   const handleAddRow = async () => {
     if (!formMajor.trim()) return
     const maxOrder = rows.reduce((max, r) => Math.max(max, r.sort_order || 0), 0)
@@ -278,6 +379,7 @@ function RoadmapView({ projectIds, user, assignmentName }) {
 
     await supabase.from('roadmap_rows').insert({
       project_id: projectIds[0],
+      task_id: null,
       major: commaToNewline(formMajor.trim()),
       minor: formMinor.trim() ? commaToNewline(formMinor.trim()) : null,
       assignee: formAssignee.trim() ? commaToNewline(formAssignee.trim()) : null,
@@ -315,14 +417,14 @@ function RoadmapView({ projectIds, user, assignmentName }) {
     await fetchData()
   }
 
-  // 행 삭제
+  // 행 삭제 (수동 행만)
   const handleDeleteRow = async (id) => {
     if (!window.confirm('이 행을 삭제할까요?')) return
     await supabase.from('roadmap_rows').delete().eq('id', id)
     await fetchData()
   }
 
-  // 행 목록 인라인 수정 (blur 시 저장)
+  // 행 목록 인라인 수정 (blur 시 저장, 수동 행만)
   const handleRowFieldBlur = async (id, field, value) => {
     await supabase.from('roadmap_rows')
       .update({ [field]: value.trim() || null })
@@ -330,8 +432,12 @@ function RoadmapView({ projectIds, user, assignmentName }) {
     await fetchData()
   }
 
-  // 필드 인라인 수정
+  // 테이블 필드 인라인 수정
   const handleStartFieldEdit = (id, field, value) => {
+    // 자동 행의 major/minor/assignee는 편집 불가
+    const row = rows.find(r => r.id === id)
+    if (row && isAutoRow(row) && ['major', 'minor', 'assignee'].includes(field)) return
+
     setEditingField({ id, field })
     setEditingFieldValue(value || '')
   }
@@ -352,6 +458,15 @@ function RoadmapView({ projectIds, user, assignmentName }) {
   }
 
   const renderField = (row, field) => {
+    // 자동 행의 major/minor/assignee → 읽기 전용
+    if (isAutoRow(row) && ['major', 'minor', 'assignee'].includes(field)) {
+      return (
+        <span className="roadmap-field-text">
+          {row[field] || '-'}
+        </span>
+      )
+    }
+
     const isEditing = editingField?.id === row.id && editingField?.field === field
     const value = row[field]
 
@@ -451,16 +566,50 @@ function RoadmapView({ projectIds, user, assignmentName }) {
     }
   })
 
+  // 자동/수동 행 분리 (아코디언 목록용)
+  const autoRows = rows.filter(r => isAutoRow(r))
+  const manualRows = rows.filter(r => !isAutoRow(r))
+
   return (
     <div className="roadmap-container">
       {/* TASK 아코디언 카드 */}
       <div className="roadmap-card">
         <div className="roadmap-card-header" onClick={() => setFormOpen(!formOpen)}>
           <span className="roadmap-card-title">TASK</span>
+          <span className="roadmap-card-count">{rows.length}</span>
           {formOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
         {formOpen && (
           <div className="roadmap-card-body">
+            {/* 자동 연동 행 목록 */}
+            {autoRows.length > 0 && (
+              <div className="roadmap-row-list">
+                <div className="roadmap-section-label">
+                  <Link size={12} />
+                  <span>프로젝트 연동</span>
+                </div>
+                {autoRows.map((row, idx) => (
+                  <div key={row.id} className="roadmap-row-item auto">
+                    <span className="roadmap-row-item-num">{idx + 1}</span>
+                    <span className="roadmap-row-item-text major">{row.major}</span>
+                    <span className="roadmap-row-item-text">{row.minor || '-'}</span>
+                    <span className="roadmap-row-item-text">{row.assignee || '-'}</span>
+                    <div className="roadmap-row-item-actions">
+                      <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'up')}
+                        disabled={rows.indexOf(row) === 0}><ArrowUp size={11} /></button>
+                      <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'down')}
+                        disabled={rows.indexOf(row) === rows.length - 1}><ArrowDown size={11} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 수동 입력 폼 */}
+            <div className="roadmap-section-label manual-label">
+              <Plus size={12} />
+              <span>수동 입력</span>
+            </div>
             <div className="roadmap-form">
               <input className="roadmap-form-input major" value={formMajor}
                 onChange={e => setFormMajor(e.target.value)}
@@ -480,11 +629,13 @@ function RoadmapView({ projectIds, user, assignmentName }) {
               </button>
             </div>
             <div className="roadmap-form-hint">쉼표(,)로 구분하면 줄바꿈됩니다</div>
-            {rows.length > 0 && (
+
+            {/* 수동 행 목록 */}
+            {manualRows.length > 0 && (
               <div className="roadmap-row-list">
-                {rows.map((row, idx) => (
+                {manualRows.map((row, idx) => (
                   <div key={row.id} className="roadmap-row-item">
-                    <span className="roadmap-row-item-num">{idx + 1}</span>
+                    <span className="roadmap-row-item-num">{autoRows.length + idx + 1}</span>
                     <input className="roadmap-form-input major" defaultValue={row.major}
                       onBlur={e => handleRowFieldBlur(row.id, 'major', e.target.value)}
                       placeholder="업무 (대분류)" />
@@ -495,8 +646,10 @@ function RoadmapView({ projectIds, user, assignmentName }) {
                       onBlur={e => handleRowFieldBlur(row.id, 'assignee', e.target.value)}
                       placeholder="담당자" />
                     <div className="roadmap-row-item-actions">
-                      <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'up')} disabled={idx === 0}><ArrowUp size={11} /></button>
-                      <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'down')} disabled={idx === rows.length - 1}><ArrowDown size={11} /></button>
+                      <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'up')}
+                        disabled={rows.indexOf(row) === 0}><ArrowUp size={11} /></button>
+                      <button className="roadmap-mini-btn" onClick={() => handleMoveRow(row.id, 'down')}
+                        disabled={rows.indexOf(row) === rows.length - 1}><ArrowDown size={11} /></button>
                       <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)}><Trash2 size={11} /></button>
                     </div>
                   </div>
@@ -525,7 +678,7 @@ function RoadmapView({ projectIds, user, assignmentName }) {
         {rows.length === 0 ? (
           <div className="empty-state" style={{ marginTop: '40px', paddingBottom: '40px' }}>
             <div className="empty-state-title">업무추진표가 비어있어요</div>
-            <div className="empty-state-desc">TASK를 열어 업무를 추가하세요</div>
+            <div className="empty-state-desc">프로젝트에 태스크를 추가하거나 수동으로 항목을 추가하세요</div>
           </div>
         ) : (
           <div className="roadmap-table-wrapper">
