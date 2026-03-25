@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Settings, Archive, ChevronDown, ChevronRight, FolderPlus, Edit2 } from 'lucide-react'
+import { Plus, Settings, Archive, ChevronDown, ChevronRight, FolderPlus, Edit2, ArrowUp, ArrowDown } from 'lucide-react'
 
 function Sidebar({
   projects,
@@ -132,7 +132,18 @@ function Sidebar({
     setDragOverDropzone(null)
   }
 
-  const renderProject = (project, assignmentId) => {
+  const handleMoveProject = (e, project, assignmentId, direction) => {
+    e.stopPropagation()
+    const list = assignmentId
+      ? projects.filter(p => p.assignment_id === assignmentId).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      : unassignedProjects
+    const idx = list.findIndex(p => p.id === project.id)
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (targetIdx < 0 || targetIdx >= list.length) return
+    onReorderProject(project.id, list[targetIdx].id, assignmentId)
+  }
+
+  const renderProject = (project, assignmentId, listLength, listIndex) => {
     const { totalCount, completedCount } = getProjectCounts(project)
 
     return (
@@ -153,6 +164,16 @@ function Sidebar({
         <span className="project-name">{project.name}</span>
         {totalCount > 0 && (
           <span className="project-count">{completedCount}/{totalCount}</span>
+        )}
+        {listLength > 1 && (
+          <div className="project-reorder-btns">
+            <button className="project-reorder-btn" onClick={(e) => handleMoveProject(e, project, assignmentId, 'up')} disabled={listIndex === 0}>
+              <ArrowUp size={10} />
+            </button>
+            <button className="project-reorder-btn" onClick={(e) => handleMoveProject(e, project, assignmentId, 'down')} disabled={listIndex === listLength - 1}>
+              <ArrowDown size={10} />
+            </button>
+          </div>
         )}
       </div>
     )
@@ -228,7 +249,7 @@ function Sidebar({
                   />
                   {assignment.projects.map((project, index) => (
                     <div key={project.id}>
-                      {renderProject(project, assignment.id)}
+                      {renderProject(project, assignment.id, assignment.projects.length, index)}
                       {/* 프로젝트 사이 드롭존 */}
                       <div
                         className={`dropzone ${dragOverDropzone === `${assignment.id}-${index}` ? 'active' : ''}`}
@@ -281,7 +302,7 @@ function Sidebar({
                   />
                   {unassignedProjects.map((project, index) => (
                     <div key={project.id}>
-                      {renderProject(project, null)}
+                      {renderProject(project, null, unassignedProjects.length, index)}
                       {/* 프로젝트 사이 드롭존 */}
                       <div
                         className={`dropzone ${dragOverDropzone === `uncategorized-${index}` ? 'active' : ''}`}

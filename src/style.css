@@ -2956,6 +2956,46 @@ body {
   cursor: grabbing;
 }
 
+.project-reorder-btns {
+  display: none;
+  align-items: center;
+  gap: 1px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.project-item:hover .project-reorder-btns {
+  display: flex;
+}
+
+.project-item:hover .project-count {
+  display: none;
+}
+
+.project-reorder-btn {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.project-reorder-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.project-reorder-btn:disabled {
+  opacity: 0.2;
+  pointer-events: none;
+}
+
 /* 드롭존 */
 .dropzone {
   height: 20px;
