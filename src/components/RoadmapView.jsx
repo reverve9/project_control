@@ -264,7 +264,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
 
     const { data: existingAuto, error: syncErr } = await supabase
       .from('roadmap_rows')
-      .select('id, task_id, major, minor, assignee')
+      .select('id, task_id, major, minor, assignee, sort_order')
       .in('project_id', projectIds)
       .not('task_id', 'is', null)
 
@@ -308,41 +308,59 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       await supabase.from('roadmap_rows').delete().in('id', staleIds)
     }
 
-    // 새 태스크의 자동 행 추가
+    // 새 태스크의 자동 행 추가 (프로젝트 순서에 맞춰)
     const toInsert = expected.filter(e => !existingByTaskId[e.taskId])
     if (toInsert.length) {
-      const { data: maxRow } = await supabase
-        .from('roadmap_rows')
-        .select('sort_order')
-        .in('project_id', projectIds)
-        .order('sort_order', { ascending: false })
-        .limit(1)
-      let maxOrder = maxRow?.[0]?.sort_order || 0
-
       await supabase.from('roadmap_rows').insert(
-        toInsert.map((e, i) => ({
+        toInsert.map(e => ({
           project_id: e.projectId,
           task_id: e.taskId,
           major: e.major,
           minor: e.minor,
           assignee: e.assignee,
           user_id: user.id,
-          sort_order: maxOrder + i + 1
+          sort_order: expected.indexOf(e)
         }))
       )
     }
 
-    // 프로젝트/태스크 이름 변경 반영
-    const updates = expected.filter(e => {
+    // 프로젝트/태스크 이름 변경 + 순서 반영
+    const updatePromises = []
+    expected.forEach((e, idx) => {
       const ex = existingByTaskId[e.taskId]
-      return ex && (ex.major !== e.major || ex.minor !== e.minor || ex.assignee !== e.assignee)
+      if (!ex) return
+      const needsUpdate = ex.major !== e.major || ex.minor !== e.minor || ex.assignee !== e.assignee || ex.sort_order !== idx
+      if (needsUpdate) {
+        updatePromises.push(
+          supabase.from('roadmap_rows').update({
+            major: e.major, minor: e.minor, assignee: e.assignee, sort_order: idx
+          }).eq('id', ex.id)
+        )
+      }
     })
-    if (updates.length) {
-      await Promise.all(updates.map(e =>
-        supabase.from('roadmap_rows').update({
-          major: e.major, minor: e.minor, assignee: e.assignee
-        }).eq('id', existingByTaskId[e.taskId].id)
-      ))
+    if (updatePromises.length) {
+      await Promise.all(updatePromises)
+    }
+
+    // 수동 행은 자동 행 뒤로 배치
+    const { data: manualRows } = await supabase
+      .from('roadmap_rows')
+      .select('id, sort_order')
+      .in('project_id', projectIds)
+      .is('task_id', null)
+      .order('sort_order', { ascending: true })
+
+    if (manualRows?.length) {
+      const manualUpdates = []
+      manualRows.forEach((r, i) => {
+        const newOrder = expected.length + i
+        if (r.sort_order !== newOrder) {
+          manualUpdates.push(
+            supabase.from('roadmap_rows').update({ sort_order: newOrder }).eq('id', r.id)
+          )
+        }
+      })
+      if (manualUpdates.length) await Promise.all(manualUpdates)
     }
 
     } catch (err) { console.warn('syncAutoRows error:', err) }
