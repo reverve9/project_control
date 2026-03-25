@@ -628,7 +628,6 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       <div className="roadmap-card">
         <div className="roadmap-card-header" onClick={() => setFormOpen(!formOpen)}>
           <span className="roadmap-card-title">PROJECT</span>
-          <span className="roadmap-card-count">{rows.length}</span>
           {formOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
         {formOpen && (
