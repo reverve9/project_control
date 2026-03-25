@@ -3257,7 +3257,6 @@ body {
 .roadmap-table th,
 .roadmap-table td {
   border-bottom: 1px solid var(--border);
-  padding: 0;
   vertical-align: middle;
 }
 
