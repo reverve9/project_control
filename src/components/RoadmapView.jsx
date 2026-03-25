@@ -47,10 +47,8 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       .select('*')
       .in('row_id', rowIds)
 
-    if (!allCellData || !allCellData.length) { win.close(); return }
-
     const allCells = {}
-    allCellData.forEach(c => { allCells[`${c.row_id}-${c.year}-${c.month}`] = c })
+    ;(allCellData || []).forEach(c => { allCells[`${c.row_id}-${c.year}-${c.month}`] = c })
 
     const hasMinorAny = rows.some(r => r.minor)
 
@@ -70,10 +68,10 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       catch { return content ? [{ text: content, done: false }] : [] }
     }
 
-    // 데이터 있는 연월 범위 산출
+    // 데이터 있는 연월 범위 산출 (없으면 현재 연도 1~12월)
     let firstYM = null
     let lastYM = null
-    allCellData.forEach(c => {
+    ;(allCellData || []).forEach(c => {
       const items = parseItems(c.content)
       if (items.length > 0) {
         const ym = c.year * 100 + c.month
@@ -82,7 +80,12 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       }
     })
 
-    if (!firstYM) { win.close(); return }
+    // 셀 데이터가 없으면 현재 연도 전체 표시
+    if (!firstYM) {
+      const curYear = new Date().getFullYear()
+      firstYM = curYear * 100 + 1
+      lastYM = curYear * 100 + 12
+    }
 
     // 시작~끝 연월 리스트 생성
     const timeSlots = []
