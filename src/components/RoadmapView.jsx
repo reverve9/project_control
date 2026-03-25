@@ -609,7 +609,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       {/* TASK 아코디언 카드 */}
       <div className="roadmap-card">
         <div className="roadmap-card-header" onClick={() => setFormOpen(!formOpen)}>
-          <span className="roadmap-card-title">TASK</span>
+          <span className="roadmap-card-title">PROJECT</span>
           <span className="roadmap-card-count">{rows.length}</span>
           {formOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
@@ -648,11 +648,11 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
               <input className="roadmap-form-input major" value={formMajor}
                 onChange={e => setFormMajor(e.target.value)}
                 onKeyDown={handleFormKeyDown}
-                placeholder="업무 (대분류)" />
+                placeholder="프로젝트" />
               <input className="roadmap-form-input" value={formMinor}
                 onChange={e => setFormMinor(e.target.value)}
                 onKeyDown={handleFormKeyDown}
-                placeholder="업무 (소분류)" />
+                placeholder="태스크" />
               <input className="roadmap-form-input" value={formAssignee}
                 onChange={e => setFormAssignee(e.target.value)}
                 onKeyDown={handleFormKeyDown}
@@ -672,10 +672,10 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
                     <span className="roadmap-row-item-num">{autoRows.length + idx + 1}</span>
                     <input className="roadmap-form-input major" defaultValue={row.major}
                       onBlur={e => handleRowFieldBlur(row.id, 'major', e.target.value)}
-                      placeholder="업무 (대분류)" />
+                      placeholder="프로젝트" />
                     <input className="roadmap-form-input" defaultValue={row.minor || ''}
                       onBlur={e => handleRowFieldBlur(row.id, 'minor', e.target.value)}
-                      placeholder="업무 (소분류)" />
+                      placeholder="태스크" />
                     <input className="roadmap-form-input" defaultValue={row.assignee || ''}
                       onBlur={e => handleRowFieldBlur(row.id, 'assignee', e.target.value)}
                       placeholder="담당자" />
@@ -712,7 +712,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
         {rows.length === 0 ? (
           <div className="empty-state" style={{ marginTop: '40px', paddingBottom: '40px' }}>
             <div className="empty-state-title">업무추진표가 비어있어요</div>
-            <div className="empty-state-desc">프로젝트에 태스크를 추가하거나 수동으로 항목을 추가하세요</div>
+            <div className="empty-state-desc">PROJECT를 열어 항목을 확인하거나 수동으로 추가하세요</div>
           </div>
         ) : (
           <div className="roadmap-table-wrapper">
