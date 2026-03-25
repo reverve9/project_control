@@ -838,6 +838,41 @@ body {
   margin-bottom: 4px;
 }
 
+.info-description {
+  padding: 0 16px 10px;
+  font-size: var(--font-13);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.info-meta {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.info-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-meta-label {
+  font-size: var(--font-12);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.info-meta-value {
+  font-size: var(--font-13);
+  color: var(--text-primary);
+  font-weight: var(--weight-500);
+}
+
 /* 메모별 진행률 리스트 */
 .memo-progress-list {
   width: 100%;

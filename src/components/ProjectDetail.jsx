@@ -128,9 +128,6 @@ function ProjectDetail({
             </button>
           </div>
         </div>
-        {project.description && (
-          <p className="content-subtitle">{project.description}</p>
-        )}
       </header>
 
       <div className="content-body">
@@ -182,27 +179,23 @@ function ProjectDetail({
               </button>
             </div>
 
+            {project.description && (
+              <p className="info-description">{project.description}</p>
+            )}
+
             {(project.assignee || project.deliverable) && (
-              <div className="info-list info-fixed">
+              <div className="info-meta">
                 {project.assignee && (
-                  <div className="info-item">
-                    <div className="info-content">
-                      <span className="info-label">담당자</span>
-                      <div className="info-value-box">
-                        <span className="info-value">{project.assignee}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <span className="info-meta-item">
+                    <span className="info-meta-label">담당자</span>
+                    <span className="info-meta-value">{project.assignee}</span>
+                  </span>
                 )}
                 {project.deliverable && (
-                  <div className="info-item">
-                    <div className="info-content">
-                      <span className="info-label">최종산출물</span>
-                      <div className="info-value-box">
-                        <span className="info-value">{project.deliverable}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <span className="info-meta-item">
+                    <span className="info-meta-label">최종산출물</span>
+                    <span className="info-meta-value">{project.deliverable}</span>
+                  </span>
                 )}
               </div>
             )}
