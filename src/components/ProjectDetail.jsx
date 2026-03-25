@@ -1,4 +1,4 @@
-import { Plus, Edit2, Trash2, Check, FileText, Copy, ExternalLink, StickyNote, Archive, User } from 'lucide-react'
+import { Plus, Edit2, Trash2, Check, FileText, Copy, ExternalLink, StickyNote, Archive, User, Link, ChevronDown, Paperclip } from 'lucide-react'
 import { useState } from 'react'
 
 function ProjectDetail({
@@ -201,28 +201,45 @@ function ProjectDetail({
             )}
 
             {project.infos && project.infos.length > 0 ? (
-              <div className="info-list">
+              <div className="info-grid">
                 {project.infos.map(info => (
-                  <div key={info.id} className="info-item">
-                    <div className="info-content">
-                      <span className="info-label">{info.label}</span>
-                      <div className="info-value-box">
-                        <span className="info-value">{info.value}</span>
+                  <div key={info.id} className="info-grid-card">
+                    <div className="info-grid-card-header">
+                      <div className="info-grid-card-title">
+                        <Link size={14} strokeWidth={1.5} />
+                        <span>{info.label}</span>
                       </div>
+                      <ChevronDown size={14} className="info-grid-card-chevron" />
                     </div>
-                    <div className="info-actions">
-                      {info.type === 'url' ? (
-                        <button className="info-action-btn" onClick={() => handleOpenUrl(info.value)}>
-                          <ExternalLink size={14} strokeWidth={1.2} />
-                        </button>
-                      ) : (
+                    {info.value && (
+                      <div className="info-grid-card-url">
+                        <Link size={12} strokeWidth={1.5} />
+                        <a href={info.value} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                          {info.value}
+                        </a>
                         <button
-                          className={`info-action-btn ${copiedId === info.id ? 'copied' : ''}`}
+                          className={`info-copy-btn ${copiedId === info.id ? 'copied' : ''}`}
                           onClick={() => handleCopy(info.id, info.value)}
                         >
-                          {copiedId === info.id ? <Check size={14} strokeWidth={1.2} /> : <Copy size={14} strokeWidth={1.2} />}
+                          {copiedId === info.id ? <Check size={12} strokeWidth={1.5} /> : <Copy size={12} strokeWidth={1.5} />}
                         </button>
-                      )}
+                      </div>
+                    )}
+                    {info.memo && (
+                      <div className="info-grid-card-memo">
+                        <FileText size={12} strokeWidth={1.5} />
+                        <span>{info.memo}</span>
+                      </div>
+                    )}
+                    {info.attachment && (
+                      <div className="info-grid-card-url">
+                        <Paperclip size={12} strokeWidth={1.5} />
+                        <a href={info.attachment} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                          {info.attachment}
+                        </a>
+                      </div>
+                    )}
+                    <div className="info-grid-card-actions">
                       <button className="info-action-btn" onClick={() => onEditInfo(info)}>
                         <Edit2 size={14} strokeWidth={1.2} />
                       </button>
@@ -235,7 +252,7 @@ function ProjectDetail({
               </div>
             ) : (
               <div className="info-empty">
-                자주 쓰는 명령어, URL, 메모를 추가하세요
+                자주 쓰는 URL, 메모, 첨부 링크를 추가하세요
               </div>
             )}
           </div>

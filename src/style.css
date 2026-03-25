@@ -1006,6 +1006,133 @@ body {
   color: var(--text-secondary);
 }
 
+/* 인포 2열 그리드 */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 16px 16px;
+}
+
+.info-grid-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-grid-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-grid-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-14);
+  font-weight: var(--weight-600);
+  color: var(--text-primary);
+}
+
+.info-grid-card-title svg {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.info-grid-card-chevron {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.info-grid-card-url {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-12);
+  min-width: 0;
+}
+
+.info-grid-card-url svg {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.info-grid-card-url a {
+  color: var(--blue);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-grid-card-url a:hover {
+  text-decoration: underline;
+}
+
+.info-copy-btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-copy-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.info-copy-btn.copied {
+  color: var(--success);
+}
+
+.info-grid-card-memo {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: var(--font-12);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.info-grid-card-memo svg {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.info-grid-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+/* 폼 라벨 optional 배지 */
+.form-label-optional {
+  font-size: var(--font-12);
+  font-weight: var(--weight-500);
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+.form-label svg {
+  vertical-align: -2px;
+  margin-right: 4px;
+  color: var(--text-tertiary);
+}
+
 /* 타입 선택 버튼 */
 .type-selector {
   display: flex;
@@ -1638,7 +1765,8 @@ body {
 }
 
 .form-label {
-  display: block;
+  display: flex;
+  align-items: center;
   font-size: var(--font-16);
   font-weight: var(--weight-500);
   color: var(--text-secondary);

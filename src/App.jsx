@@ -311,7 +311,9 @@ function App() {
           .update({
             type: infoData.type,
             label: infoData.label,
-            value: infoData.value
+            value: infoData.value,
+            memo: infoData.memo,
+            attachment: infoData.attachment
           })
           .eq('id', editingInfo.id)
 
@@ -324,6 +326,8 @@ function App() {
             type: infoData.type,
             label: infoData.label,
             value: infoData.value,
+            memo: infoData.memo,
+            attachment: infoData.attachment,
             user_id: user.id
           })
 
