@@ -3288,7 +3288,8 @@ body {
   color: var(--text-primary);
   background: var(--bg-primary);
   vertical-align: top;
-  text-align: center;
+  text-align: left;
+  word-break: keep-all;
 }
 
 .roadmap-td-minor {
@@ -3296,15 +3297,17 @@ body {
   font-size: var(--font-12);
   color: var(--text-primary);
   background: var(--bg-primary);
-  text-align: center;
+  text-align: left;
+  word-break: keep-all;
 }
 
 .roadmap-td-output {
-  padding: 10px 16px;
+  padding: 10px 10px;
   font-size: var(--font-12);
   color: var(--text-primary);
   background: var(--bg-primary);
-  text-align: center;
+  text-align: left;
+  word-break: keep-all;
 }
 
 .roadmap-td-assignee {
@@ -3312,7 +3315,8 @@ body {
   font-size: var(--font-12);
   color: var(--text-primary);
   background: var(--bg-primary);
-  text-align: center;
+  text-align: left;
+  word-break: keep-all;
 }
 
 .roadmap-td-cell {
