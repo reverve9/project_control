@@ -743,6 +743,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
                 {quarter.months.map(m => (
                   <th key={m} className="roadmap-th-month">{MONTH_NAMES[m]}</th>
                 ))}
+                <th className="roadmap-th-action"></th>
               </tr>
             </thead>
             <tbody>
@@ -796,6 +797,13 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
                         </td>
                       )
                     })}
+                    <td className="roadmap-td-action">
+                      {!isAutoRow(row) && (
+                        <button className="roadmap-mini-btn delete" onClick={() => handleDeleteRow(row.id)}>
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))
               })}
