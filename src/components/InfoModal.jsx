@@ -26,7 +26,7 @@ function InfoModal({ info, onSave, onClose }) {
     const data = {
       type: url.trim() ? 'url' : 'note',
       label: label.trim(),
-      value: url.trim() || null,
+      value: url.trim() || '',
       memo: memo.trim() || null
     }
     console.log('InfoModal onSave data:', data)
