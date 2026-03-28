@@ -3297,6 +3297,14 @@ body {
   overflow-wrap: break-word;
 }
 
+.roadmap-major-assignee {
+  display: block;
+  font-size: 10px;
+  font-weight: var(--weight-500);
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
 .roadmap-td-minor {
   padding: 10px 12px;
   font-size: var(--font-12);

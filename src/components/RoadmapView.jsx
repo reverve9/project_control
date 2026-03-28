@@ -136,7 +136,9 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       const span = g.rows.length
       const noMinor = span === 1 && !g.rows[0].minor
       const rs = !hasMinorAny ? '' : noMinor ? ' rowspan="2"' : ''
-      headerRow1 += `<th class="th-major" colspan="${span}"${rs}>${esc(g.major)}</th>`
+      const assignee = g.rows[0]?.assignee
+      const assigneeHtml = assignee ? `<br><span style="font-size:0.85em;font-weight:400;color:#666">(${esc(assignee)})</span>` : ''
+      headerRow1 += `<th class="th-major" colspan="${span}"${rs}>${esc(g.major)}${assigneeHtml}</th>`
     })
 
     // 헤더 2행: 소분류
@@ -150,9 +152,8 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       })
     }
 
-    // 산출물 → 담당 순서
-    const outputRow = `<tr class="row-meta"><td class="td-label">최종산출물</td>${rows.map(r => `<td class="td-meta">${esc(r.output)}</td>`).join('')}</tr>`
-    const assigneeRow = `<tr class="row-meta row-assignee"><td class="td-label">담당</td>${rows.map(r => `<td class="td-meta">${esc(r.assignee)}</td>`).join('')}</tr>`
+    // 산출물 행
+    const outputRow = `<tr class="row-meta row-assignee"><td class="td-label">최종산출물</td>${rows.map(r => `<td class="td-meta">${esc(r.output)}</td>`).join('')}</tr>`
 
     // 월별 행
     const monthRows = timeSlots.map(slot =>
@@ -222,7 +223,6 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       </thead>
       <tbody>
         ${outputRow}
-        ${assigneeRow}
         ${monthRows}
       </tbody>
     </table>
@@ -739,7 +739,6 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
                 <th className="roadmap-th-major">프로젝트</th>
                 <th className="roadmap-th-minor">태스크</th>
                 <th className="roadmap-th-output">산출물</th>
-                <th className="roadmap-th-assignee">담당</th>
                 {quarter.months.map(m => (
                   <th key={m} className="roadmap-th-month">{MONTH_NAMES[m]}</th>
                 ))}
@@ -753,11 +752,13 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
                     {ri === 0 && (
                       <td className="roadmap-td-major" rowSpan={group.rows.length}>
                         {renderField(row, 'major')}
+                        {row.assignee && (
+                          <span className="roadmap-major-assignee">({row.assignee})</span>
+                        )}
                       </td>
                     )}
                     <td className="roadmap-td-minor">{renderField(row, 'minor')}</td>
                     <td className="roadmap-td-output">{renderField(row, 'output')}</td>
-                    <td className="roadmap-td-assignee">{renderField(row, 'assignee')}</td>
                     {quarter.months.map(m => {
                       const key = getCellKey(row.id, m)
                       const cell = cells[key]
