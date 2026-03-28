@@ -3245,8 +3245,8 @@ body {
 
 /* 테이블 */
 .roadmap-table-wrapper {
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: auto;
+  max-height: calc(100vh - 280px);
   padding: 0 16px 16px;
 }
 
