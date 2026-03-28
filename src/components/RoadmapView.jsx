@@ -285,7 +285,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
           taskId: project.id,
           major: project.name,
           minor: null,
-          assignee: null
+          assignee: project.assignee || null
         })
       } else {
         tasks.forEach(task => {
@@ -294,7 +294,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
             taskId: task.id,
             major: project.name,
             minor: task.title,
-            assignee: task.assignee || null
+            assignee: task.assignee || project.assignee || null
           })
         })
       }
