@@ -20,14 +20,17 @@ function InfoModal({ info, onSave, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    console.log('InfoModal handleSubmit called, label:', label)
     if (!label.trim()) return
 
-    onSave({
+    const data = {
       type: 'info',
       label: label.trim(),
       value: url.trim() || null,
       memo: memo.trim() || null
-    })
+    }
+    console.log('InfoModal onSave data:', data)
+    onSave(data)
   }
 
   const handleOverlayClick = (e) => {

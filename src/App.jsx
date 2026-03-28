@@ -304,6 +304,7 @@ function App() {
   }
 
   const handleSaveInfo = async (infoData) => {
+    console.log('handleSaveInfo called:', infoData, 'activeProjectId:', activeProjectId)
     try {
       if (editingInfo) {
         const { error } = await supabase
@@ -338,6 +339,7 @@ function App() {
       setEditingInfo(null)
     } catch (error) {
       console.error('인포 저장 실패:', error)
+      alert('인포 저장 실패: ' + (error.message || JSON.stringify(error)))
     }
   }
 
@@ -843,6 +845,7 @@ function App() {
             onEditInfo={handleEditInfo}
             onDeleteInfo={handleDeleteInfo}
             onAddInfo={() => {
+              console.log('onAddInfo called, activeProjectId:', activeProjectId)
               setEditingInfo(null)
               setShowInfoModal(true)
             }}
