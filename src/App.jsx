@@ -319,7 +319,7 @@ function App() {
 
         if (error) throw error
       } else {
-        const { error } = await supabase
+        const { data, error, status, statusText } = await supabase
           .from('project_infos')
           .insert({
             project_id: activeProjectId,
@@ -329,7 +329,9 @@ function App() {
             memo: infoData.memo,
             user_id: user.id
           })
+          .select()
 
+        console.log('insert response:', { data, error, status, statusText })
         if (error) throw error
       }
 
