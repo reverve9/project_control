@@ -246,6 +246,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
   const [formMajor, setFormMajor] = useState('')
   const [formMinor, setFormMinor] = useState('')
   const [formAssignee, setFormAssignee] = useState('')
+  const [formOutput, setFormOutput] = useState('')
 
   // 인라인 편집
   const [editingCell, setEditingCell] = useState(null)
@@ -435,6 +436,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
       major: commaToNewline(formMajor.trim()),
       minor: formMinor.trim() ? commaToNewline(formMinor.trim()) : null,
       assignee: formAssignee.trim() ? commaToNewline(formAssignee.trim()) : null,
+      output: formOutput.trim() ? commaToNewline(formOutput.trim()) : null,
       user_id: user.id,
       sort_order: maxOrder + 1
     })
@@ -442,6 +444,7 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
     setFormMajor('')
     setFormMinor('')
     setFormAssignee('')
+    setFormOutput('')
     await fetchData()
   }
 
@@ -670,6 +673,10 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
                 onChange={e => setFormMinor(e.target.value)}
                 onKeyDown={handleFormKeyDown}
                 placeholder="태스크" />
+              <input className="roadmap-form-input" value={formOutput}
+                onChange={e => setFormOutput(e.target.value)}
+                onKeyDown={handleFormKeyDown}
+                placeholder="최종산출물" />
               <input className="roadmap-form-input" value={formAssignee}
                 onChange={e => setFormAssignee(e.target.value)}
                 onKeyDown={handleFormKeyDown}
@@ -693,6 +700,9 @@ function RoadmapView({ projectIds, projects, user, assignmentName }) {
                     <input className="roadmap-form-input" defaultValue={row.minor || ''}
                       onBlur={e => handleRowFieldBlur(row.id, 'minor', e.target.value)}
                       placeholder="태스크" />
+                    <input className="roadmap-form-input" defaultValue={row.output || ''}
+                      onBlur={e => handleRowFieldBlur(row.id, 'output', e.target.value)}
+                      placeholder="최종산출물" />
                     <input className="roadmap-form-input" defaultValue={row.assignee || ''}
                       onBlur={e => handleRowFieldBlur(row.id, 'assignee', e.target.value)}
                       placeholder="담당자" />
