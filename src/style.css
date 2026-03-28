@@ -3225,6 +3225,11 @@ body {
   flex-shrink: 0;
 }
 
+.roadmap-row-item-actions .roadmap-mini-btn {
+  opacity: 1;
+  color: var(--text-tertiary);
+}
+
 .roadmap-row-item-actions .roadmap-mini-btn:disabled {
   opacity: 0.25;
   pointer-events: none;
